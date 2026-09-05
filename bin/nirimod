@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# NiriMod - GTK4/libadwaita 配置界面 for the niri compositor
+# 以用户级 Python 方式运行，走 Wayland 后端。
+export GDK_BACKEND=wayland
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$HOME/.local/share/nirimod"
+exec python3 -m nirimod "$@"

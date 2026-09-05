@@ -1,0 +1,495 @@
+// ============================================================
+// Niri 配置 - Ubuntu 24.04
+// 仿 Windows 风格 + 效率优先
+//
+// 配置文件路径:
+//   ~/.config/niri/config.kdl
+//
+// 修改后校验语法(有错会提示, 修完再保存):
+//   niri validate
+//
+// 注意: niri 保存配置文件后会自动热加载, 无需手动重启。
+// ============================================================
+
+
+// ============================================================
+// 输入设备 (键盘 / 触摸板 / 鼠标)
+// ============================================================
+
+input {
+    keyboard {
+        xkb {
+            // 留空 = 使用系统键盘布局。
+            //
+            // 示例:
+            // layout "us"                    - 美国键盘
+            // layout "us,cn"                 - 美式 + 中文
+            // options "grp:win_space_toggle" - 用 Win+空格 切换中英文
+        }
+    }
+
+    touchpad {
+        tap                // 触摸板轻点=单击
+        natural-scroll     // 自然滚动(手指向下内容向下，类似手机)
+    }
+
+    mouse {}   // 鼠标无特殊配置
+}
+
+
+// ============================================================
+// 开机自启动程序
+// ============================================================
+
+// 状态栏 (强制走 Wayland 后端, 避免因为 X11 的 $DISPLAY 导致无法启动)
+spawn-at-startup "env" "GDK_BACKEND=wayland" "waybar"
+
+// 通知守护 (弹通知用)
+spawn-at-startup "mako"
+
+// 桌面壁纸 (用 swaybg 设置背景图片, 按填充方式铺满)
+// 改为五条悟壁纸(从 mp4 抽帧得到)
+spawn-at-startup "swaybg" "-i" "~/Pictures/Wallpapers/五条悟-壁纸.jpg" "-m" "fill"
+
+// 剪贴板历史守护 (自动记录你复制的内容; 依赖 cliphist + wl-clipboard)
+// 之后按 Super+V (Win+V) 弹出剪贴板历史选择器
+spawn-at-startup "sh" "-c" "wl-paste --watch cliphist store"
+
+
+// ============================================================
+// 通用选项
+// ============================================================
+
+// 截图保存位置 (文件名含日期时间)
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+// 优先使用服务端装饰(即窗口边框由合成器绘制, 而非应用自己画)
+prefer-no-csd
+
+// 鼠标指针
+cursor {
+    // 可换成已安装的其他鼠标主题
+    // xcursor-theme "Adwaita"
+    // xcursor-size 24
+
+    hide-when-typing        // 打字时自动隐藏鼠标
+    hide-after-inactive-ms 1500   // 静止 1.5 秒后隐藏鼠标
+}
+
+
+// ============================================================
+// 布局 (窗口如何排列)
+// ============================================================
+
+layout {
+    // 列/窗口之间的间距(像素)
+    gaps 12
+
+    // 是否让当前聚焦列尽量居中: never=不强制居中
+    center-focused-column "never"
+
+    // 当只剩一列可见时, 让它居中
+    always-center-single-column
+
+    // 预设列宽(按屏幕宽度的比例)
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    // 新建窗口的默认列宽
+    default-column-width {
+        proportion 0.5
+    }
+}
+
+
+// ============================================================
+// 工作区
+// ============================================================
+//
+// niri 默认使用"动态工作区"(用哪个就出现哪个, 无固定数量)。
+//
+// Super + 1..9   -> 切换到对应工作区
+// Super + Ctrl + 1..9 -> 把当前列移到该工作区
+//
+// 工作区也可以在多个显示器之间移动。
+
+
+// ============================================================
+// 窗口规则 (统一窗口外观)
+// ============================================================
+
+// 给平铺/浮动窗口统一加圆角
+window-rule {
+    geometry-corner-radius 12   // 圆角半径 12 像素
+    clip-to-geometry true       // 内容超出圆角则裁剪(让圆角更干净)
+}
+
+
+// 示例: 想让 Firefox 默认最大化, 取消下面注释即可
+//
+// window-rule {
+//     match app-id=r#"^firefox$"#
+//     open-maximized true
+// }
+
+
+// ============================================================
+// 快捷键 (所有按键绑定)
+// ============================================================
+
+binds {
+
+    // --------------------------------------------------------
+    // 帮助
+    // --------------------------------------------------------
+
+    // 显示 niri 快捷键总览悬浮窗
+    Super+Shift+Slash { show-hotkey-overlay; }
+
+
+    // --------------------------------------------------------
+    // 应用启动
+    // --------------------------------------------------------
+
+    // 打开终端
+    Super+T { spawn "alacritty"; }
+
+    // 应用启动器 (fuzzel)
+    Alt+Space { spawn "fuzzel"; }
+
+
+    // --------------------------------------------------------
+    // 基础窗口管理
+    // --------------------------------------------------------
+
+    // 关闭当前窗口
+    Super+W { close-window; }
+
+    // 最大化当前列 (占满可用空间, Windows 风格)
+    Super+M { maximize-column; }
+
+    // 真全屏 (隐藏状态栏/窗口装饰)
+    Super+Shift+M { fullscreen-window; }
+
+    // 把当前窗口最大化到屏幕边缘
+    Super+Ctrl+M { maximize-window-to-edges; }
+
+    // 让当前列扩展到全部可用宽度
+    Super+Ctrl+F { expand-column-to-available-width; }
+
+    // 居中当前列
+    Super+C { center-column; }
+
+    // 居中所有可见列
+    Super+Ctrl+C { center-visible-columns; }
+
+
+    // --------------------------------------------------------
+    // 焦点移动 - 方向键 (切换看哪个窗口获得焦点)
+    // --------------------------------------------------------
+
+    Super+Left { focus-column-left; }
+    Super+Right { focus-column-right; }
+    Super+Up { focus-window-up; }
+    Super+Down { focus-window-down; }
+
+
+    // --------------------------------------------------------
+    // 焦点移动 - Vim 风格 (H/J/K/L)
+    // --------------------------------------------------------
+
+    Super+H { focus-column-left; }
+    // Super+L 已用于锁屏(见下方)
+    Super+K { focus-window-up; }
+    Super+J { focus-window-down; }
+
+
+    // --------------------------------------------------------
+    // 移动窗口/列 (改变窗口位置)
+    // --------------------------------------------------------
+
+    Super+Ctrl+Left { move-column-left; }
+    Super+Ctrl+Right { move-column-right; }
+    Super+Ctrl+Up { move-window-up; }
+    Super+Ctrl+Down { move-window-down; }
+
+    // 移动 - Vim 风格
+    Super+Ctrl+H { move-column-left; }
+    // Super+Ctrl+L 不可用(Super+L 是锁屏)
+    Super+Ctrl+K { move-window-up; }
+    Super+Ctrl+J { move-window-down; }
+
+
+    // --------------------------------------------------------
+    // 多显示器导航
+    // --------------------------------------------------------
+
+    // 切换焦点到相邻显示器
+    Super+Shift+Left { focus-monitor-left; }
+    Super+Shift+Right { focus-monitor-right; }
+    Super+Shift+Up { focus-monitor-up; }
+    Super+Shift+Down { focus-monitor-down; }
+
+    // 把当前列移到相邻显示器
+    Super+Ctrl+Shift+Left { move-column-to-monitor-left; }
+    Super+Ctrl+Shift+Right { move-column-to-monitor-right; }
+    Super+Ctrl+Shift+Up { move-column-to-monitor-up; }
+    Super+Ctrl+Shift+Down { move-column-to-monitor-down; }
+
+
+    // --------------------------------------------------------
+    // 工作区切换与移动
+    // --------------------------------------------------------
+
+    // 切换到工作区 1-9
+    Super+1 { focus-workspace 1; }
+    Super+2 { focus-workspace 2; }
+    Super+3 { focus-workspace 3; }
+    Super+4 { focus-workspace 4; }
+    Super+5 { focus-workspace 5; }
+    Super+6 { focus-workspace 6; }
+    Super+7 { focus-workspace 7; }
+    Super+8 { focus-workspace 8; }
+    Super+9 { focus-workspace 9; }
+
+    // 切换上一个/下一个工作区
+    Super+Page_Down { focus-workspace-down; }
+    Super+Page_Up { focus-workspace-up; }
+
+    // 切换工作区 - Vim 风格 (U=下, I=上)
+    Super+U { focus-workspace-down; }
+    Super+I { focus-workspace-up; }
+
+    // 把当前列移到工作区 1-9
+    Super+Ctrl+1 { move-column-to-workspace 1; }
+    Super+Ctrl+2 { move-column-to-workspace 2; }
+    Super+Ctrl+3 { move-column-to-workspace 3; }
+    Super+Ctrl+4 { move-column-to-workspace 4; }
+    Super+Ctrl+5 { move-column-to-workspace 5; }
+    Super+Ctrl+6 { move-column-to-workspace 6; }
+    Super+Ctrl+7 { move-column-to-workspace 7; }
+    Super+Ctrl+8 { move-column-to-workspace 8; }
+    Super+Ctrl+9 { move-column-to-workspace 9; }
+
+    // 把当前列移到上/下一个工作区
+    Super+Ctrl+Page_Down { move-column-to-workspace-down; }
+    Super+Ctrl+Page_Up { move-column-to-workspace-up; }
+
+    // 把整个工作区上移/下移(改变工作区顺序)
+    Super+Shift+Page_Down { move-workspace-down; }
+    Super+Shift+Page_Up { move-workspace-up; }
+
+
+    // --------------------------------------------------------
+    // 窗口分组/合并到一列
+    // --------------------------------------------------------
+
+    // 把左/右边的窗口吸收进当前列(或从列中弹出)
+    Super+BracketLeft { consume-or-expel-window-left; }
+    Super+BracketRight { consume-or-expel-window-right; }
+
+    // 更明确的窗口分组操作
+    Super+Comma { consume-window-into-column; }
+    Super+Period { expel-window-from-column; }
+
+
+    // --------------------------------------------------------
+    // 列/窗口尺寸调整
+    // --------------------------------------------------------
+
+    // 循环切换预设列宽
+    Super+R { switch-preset-column-width; }
+
+    // 反向切换预设列宽
+    Super+Shift+R { switch-preset-column-width-back; }
+
+    // 循环切换窗口高度
+    Super+Shift+E { switch-preset-window-height; }
+
+    // 重置窗口高度
+    Super+Ctrl+R { reset-window-height; }
+
+    // 微调列宽 (Minus=减, Equal=加)
+    Super+Minus { set-column-width "-10%"; }
+    Super+Equal { set-column-width "+10%"; }
+
+    // 微调窗口高度
+    Super+Shift+Minus { set-window-height "-10%"; }
+    Super+Shift+Equal { set-window-height "+10%"; }
+
+    // 切换窗口浮动/平铺
+    Super+Shift+F { toggle-window-floating; }
+
+    // 在浮动与平铺窗口间切换焦点(已注释, 未使用)
+    // Super+Shift+V { switch-focus-between-floating-and-tiling; }
+
+
+    // --------------------------------------------------------
+    // 鼠标滚轮 / 触摸板导航
+    // --------------------------------------------------------
+
+    // 按住 Super + 上下滚轮 = 切换工作区
+    Super+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Super+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }
+
+    // 按住 Super+Ctrl + 上下滚轮 = 把当前列移到上/下一个工作区
+    Super+Ctrl+WheelScrollDown cooldown-ms=150 {
+        move-column-to-workspace-down;
+    }
+
+    Super+Ctrl+WheelScrollUp cooldown-ms=150 {
+        move-column-to-workspace-up;
+    }
+
+    // 按住 Super + 左右滚轮 = 在左右列之间切换焦点
+    Super+WheelScrollRight { focus-column-right; }
+    Super+WheelScrollLeft { focus-column-left; }
+
+    // 按住 Super+Ctrl + 左右滚轮 = 移动左右列
+    Super+Ctrl+WheelScrollRight { move-column-right; }
+    Super+Ctrl+WheelScrollLeft { move-column-left; }
+
+
+    // --------------------------------------------------------
+    // 截图
+    // --------------------------------------------------------
+
+    // 截图当前聚焦的显示器
+    Print { screenshot; }
+
+    // 截图整个屏幕
+    Ctrl+Print { screenshot-screen; }
+
+    // 截图当前窗口
+    Alt+Print { screenshot-window; }
+
+
+    // --------------------------------------------------------
+    // 音量
+    // --------------------------------------------------------
+
+    // 音量加 (Fn 媒体键)
+    XF86AudioRaiseVolume {
+        spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+";
+    }
+
+    // 音量减 (Fn 媒体键)
+    XF86AudioLowerVolume {
+        spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-";
+    }
+
+    // 静音切换 (Fn 媒体键)
+    XF86AudioMute {
+        spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle";
+    }
+
+    // 备用音量键 (即使 Fn 媒体键被固件拦截也能用): Super+F2/F3
+    // 调音量并弹出当前百分比通知
+    Super+F3 {
+        spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+; notify-send '音量' \"$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"%.0f%%\", $2*100}')\"";
+    }
+    Super+F2 {
+        spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-; notify-send '音量' \"$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"%.0f%%\", $2*100}')\"";
+    }
+
+
+    // --------------------------------------------------------
+    // 屏幕亮度
+    // --------------------------------------------------------
+
+    // 亮度加 (Fn 媒体键)
+    XF86MonBrightnessUp {
+        spawn "brightnessctl" "set" "+5%";
+    }
+
+    // 亮度减 (Fn 媒体键)
+    XF86MonBrightnessDown {
+        spawn "brightnessctl" "set" "5%-";
+    }
+
+    // 备用亮度键 (即使 Fn 媒体键被固件拦截也能用): Super+F5/F6
+    // 用 sudo 执行以绕过背光设备权限, 并弹出当前亮度通知
+    Super+F6 {
+        spawn-sh "sudo -n brightnessctl -d nvidia_0 set +5%; notify-send '亮度' \"$(brightnessctl -d nvidia_0 get)%\"";
+    }
+    Super+F5 {
+        spawn-sh "sudo -n brightnessctl -d nvidia_0 set 5%-; notify-send '亮度' \"$(brightnessctl -d nvidia_0 get)%\"";
+    }
+
+
+    // --------------------------------------------------------
+    // 媒体播放控制键
+    // --------------------------------------------------------
+
+    // 播放/暂停 (Fn 媒体键)
+    XF86AudioPlay {
+        spawn "playerctl" "play-pause";
+    }
+
+    // 下一曲 (Fn 媒体键)
+    XF86AudioNext {
+        spawn "playerctl" "next";
+    }
+
+    // 上一曲 (Fn 媒体键)
+    XF86AudioPrev {
+        spawn "playerctl" "previous";
+    }
+
+
+    // --------------------------------------------------------
+    // 剪贴板
+    // --------------------------------------------------------
+
+    // 弹出剪贴板历史选择器 (依赖 wl-clipboard + cliphist + fuzzel)
+    // Win+V: 列出历史 -> 用方向键选择 -> 回车即可粘贴所选内容
+    Super+V {
+        spawn "sh" "-c" "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy";
+    }
+
+
+    // --------------------------------------------------------
+    // 锁屏
+    // --------------------------------------------------------
+
+    // Windows + L 锁屏 (黑色背景)
+    Super+L {
+        spawn "swaylock" "-c" "000000";
+    }
+
+
+    // --------------------------------------------------------
+    // 退出 niri 会话
+    // --------------------------------------------------------
+
+    // 退出 niri (已被注释, 因为和"切换预设窗口高度"Super+Shift+E 冲突)
+    // Super+Shift+E { quit; }  // conflicts with switch-preset-window-height
+
+    // 紧急退出快捷键 (同一般桌面)
+    Ctrl+Alt+Delete {
+        quit;
+    }
+
+    // 电源管理 (带确认框, 防止误触)
+    Super+Shift+P { spawn "niri-power" "poweroff"; }   // 关机
+    Super+Shift+Q { spawn "niri-power" "reboot"; }     // 重启
+    Super+Shift+S { spawn "niri-power" "suspend"; }    // 挂起
+}
+
+
+// ============================================================
+// 调试
+// ============================================================
+//
+// 除非是多显卡配置有特殊需求, 否则不要强制指定 DRM 渲染设备。
+// 保持本段为空可避免硬编码 /dev/dri/renderD128。
+//
+// 如果以后电脑在"睡眠/唤醒"后出现黑屏/不显示问题,
+// 可以启用下面这段(注释取消即可):
+//
+// debug {
+//     force-disable-connectors-on-resume
+// }

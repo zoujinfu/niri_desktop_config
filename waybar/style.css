@@ -1,0 +1,115 @@
+* {
+    font-family: "JetBrainsMono Nerd Font", "JetBrainsMono NF", monospace;
+    font-size: 13px;
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+}
+
+window#waybar {
+    background-color: rgba(18, 22, 28, 0.86);
+    color: #e6edf3;
+    border-bottom: 1px solid rgba(120, 200, 160, 0.15);
+}
+
+/* ===== 顶部所有模块统一间距 ===== */
+#custom-workspaces,
+#custom-window,
+#clock,
+#idle_inhibitor,
+#network,
+#cpu,
+#memory,
+#battery,
+#tray {
+    padding: 0 10px;
+    margin: 6px 3px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ===== 工作区（niri） ===== */
+#custom-workspaces {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 0 6px;
+    letter-spacing: 1px;
+}
+
+/* ===== 当前窗口标题 ===== */
+#custom-window {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: #90a0b4;
+    font-style: italic;
+}
+
+/* ===== 时钟 ===== */
+#clock {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #e6edf3;
+    font-weight: 600;
+}
+
+/* ===== 空闲抑制 ===== */
+#idle_inhibitor {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+#idle_inhibitor.activated {
+    color: #3fbf8f;
+}
+
+/* ===== 网络 ===== */
+#network {
+    background-color: rgba(88, 166, 255, 0.12);
+    color: #8fc3ff;
+}
+#network.disconnected {
+    background-color: rgba(248, 81, 73, 0.15);
+    color: #f85149;
+}
+
+/* ===== CPU ===== */
+#cpu {
+    background-color: rgba(179, 127, 255, 0.12);
+    color: #c3a6ff;
+}
+
+/* ===== 内存 ===== */
+#memory {
+    background-color: rgba(63, 191, 143, 0.12);
+    color: #7adcb4;
+}
+
+/* ===== 电池 ===== */
+#battery {
+    background-color: rgba(255, 214, 90, 0.12);
+    color: #ffd65a;
+}
+#battery.charging,
+#battery.plugged {
+    color: #3fbf8f;
+}
+#battery.warning {
+    color: #f0883e;
+}
+#battery.critical {
+    color: #f85149;
+    animation-name: blink;
+    animation-duration: 0.8s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+@keyframes blink {
+    to { background-color: rgba(248, 81, 73, 0.4); }
+}
+
+/* ===== 托盘 ===== */
+#tray {
+    background-color: rgba(255, 255, 255, 0.04);
+    padding: 0 8px;
+}
+
+/* ===== 标签聚焦 ===== */
+label:focus {
+    background-color: transparent;
+}

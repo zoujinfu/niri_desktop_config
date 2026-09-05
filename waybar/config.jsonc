@@ -1,0 +1,103 @@
+{
+    // ===== 全局外观 =====
+    "layer": "top",
+    "position": "top",
+    "height": 34,
+    "spacing": 6,
+    "modules-left": ["custom/workspaces", "custom/window"],
+    "modules-center": ["clock"],
+    "modules-right": ["idle_inhibitor", "network", "cpu", "memory", "battery", "tray"],
+
+    // ===== 工作区（用 niri IPC 脚本实现） =====
+    "custom/workspaces": {
+        "exec": "$HOME/.config/waybar/scripts/niri-workspaces.py",
+        "return-type": "json",
+        "interval": 1,
+        "tooltip": true
+    },
+
+    // ===== 当前窗口标题（用 niri IPC 脚本实现） =====
+    "custom/window": {
+        "exec": "$HOME/.config/waybar/scripts/niri-window.py",
+        "return-type": "text",
+        "interval": 1,
+        "format": "{}",
+        "max-length": 50,
+        "tooltip": false
+    },
+
+    // ===== 时钟 =====
+    "clock": {
+        "format": "  {:%m-%d %H:%M}",
+        "format-alt": "{:%Y-%m-%d %H:%M:%S}",
+        "tooltip-format": "{:%Y年%m月%d日 %A}\n{calendar}",
+        "on-click": "gnome-calendar"
+    },
+
+    // ===== 空闲抑制（播放视频/全屏时防休眠） =====
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": {
+            "activated": "",
+            "deactivated": ""
+        },
+        "tooltip": true
+    },
+
+    // ===== 网络 =====
+    "network": {
+        "format-wifi": "  {essid} {signalStrength}%",
+        "format-ethernet": "  {ifname} {ipaddr}",
+        "format-disconnected": "  ✗",
+        "format-linked": "  {ifname} 无网络",
+        "format-alt": "{ifname}: {ipaddr}/{cidr}",
+        "tooltip-format": "{essid} / 信号 {signalStrength}% ({ipaddr})",
+        "interval": 5,
+        "on-click": "nm-connection-editor"
+    },
+
+    // ===== CPU =====
+    "cpu": {
+        "format": "  {usage}%",
+        "format-icons": {
+            "low": "",
+            "medium": "",
+            "high": ""
+        },
+        "tooltip": false,
+        "interval": 3
+    },
+
+    // ===== 内存 =====
+    "memory": {
+        "format": "  {}%",
+        "format-icons": {
+            "low": "",
+            "medium": "",
+            "high": ""
+        },
+        "tooltip": true,
+        "interval": 3
+    },
+
+    // ===== 电池 =====
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "  {capacity}% {icon}",
+        "format-charging": "  {capacity}% ",
+        "format-plugged": "  {capacity}% ",
+        "format-alt": "  {time} {icon}",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip": true,
+        "interval": 10
+    },
+
+    // ===== 托盘 =====
+    "tray": {
+        "icon-size": 18,
+        "spacing": 8
+    }
+}
