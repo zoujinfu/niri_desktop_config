@@ -21,6 +21,8 @@ niri_desktop_config/
 │       └── niri-event-daemon.py      # 事件流守护（已停用，改用 IPC 轮询，保留备用）
 ├── mako/
 │   └── config                         # 通知守护配置（历史 + 按应用分组）
+├── hypr/
+│   └── hyprlock.conf                  # 锁屏界面（Catppuccin Mocha，走 session-lock 协议）
 └── bin/
     ├── niri-power                    # 电源管理（弹确认框关机/重启/挂起）
     ├── nirimod                       # 图形化 niri 配置面板启动脚本
@@ -67,6 +69,9 @@ chmod +x ~/.config/waybar/scripts/*.py
 
 # mako
 mkdir -p ~/.config/mako && cp mako/config ~/.config/mako/config
+
+# hyprlock（锁屏界面；PAM 需要 /etc/pam.d/hyprlock，多数发行版的 hyprlock 包会自带）
+mkdir -p ~/.config/hypr && cp hypr/hyprlock.conf ~/.config/hypr/hyprlock.conf
 
 # 脚本（bin/ 下的装到 ~/.local/bin/，home-bin/ 下的装到 ~/bin/）
 mkdir -p ~/.local/bin ~/bin
@@ -203,7 +208,9 @@ chmod +x ~/.local/bin/{niri-power,nirimod,lock-and-off,markshot-translate-region
 `Ctrl+Alt+L` 调用 `bin/lock-and-off`：启动 hyprlock → 等 0.8s 确认它接管 session lock → 熄屏。
 
 - 之所以不用 niri 里直接写两行 action：`spawn` 是异步的，熄屏会抢在锁屏接管之前，**按键唤醒的瞬间可能瞥见未锁的桌面**。
-- ⚠️ 本仓库**未包含** `~/.config/hypr/hyprlock.conf`（它含个人视觉配置）。若不提供该文件，hyprlock 会用默认外观。
+- ⚠️ 锁屏界面配置为仓库内的 `hypr/hyprlock.conf`（Catppuccin Mocha，含深色遮罩 + 三态输入反馈），装到 `~/.config/hypr/hyprlock.conf`。
+- ⚠️ 该配置里 **`general.immediate_render = true` 不能删**：不开的话 hyprlock 会等背景截图就绪才开始绘制，那段时间屏幕全黑、要按一下键才出现界面。
+- ⚠️ 深色 `shape` 遮罩也不能删：不加时截到浅色窗口 → 背景发白发灰、浅色文字全糊掉。加了遮罩后，`label` / `input-field` 必须显式 `zindex = 2`，否则会被遮住。
 - 解锁卡住时：`pkill -USR1 hyprlock`。**切勿 SIGTERM / SIGKILL**——niri 走 ext-session-lock 协议，强杀会黑屏死锁。
 
 ### 截图翻译（`Super+A`）
