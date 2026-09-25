@@ -179,7 +179,11 @@ chmod +x ~/.local/bin/{niri-power,nirimod,lock-and-off,markshot-translate-region
 | `Super+F3` / `Super+F2` | 音量加 / 减（备用，带通知） |
 | `Fn` 亮度键（`XF86MonBrightness*`） | 亮度 ±5%（锁屏时仍可用） |
 | `Super+F6` / `Super+F5` | 亮度加 / 减（备用，带通知） |
-| `XF86AudioPlay/Next/Prev` | 播放暂停 / 下一曲 / 上一曲 |
+| `XF86AudioPlay/Next/Prev` | 播放暂停 / 下一曲 / 上一曲（键盘媒体键，锁屏时仍可用） |
+| `Super+Z` / `Super+X` | 上一曲 / 下一曲（媒体键的键盘替代，2026-09-25 新增） |
+| `Super+Shift+X` | 播放暂停（同上） |
+
+> 为什么要有 `Super+Z/X` 这组：不少外接键盘**没有媒体键**，而笔记本的 `Fn+←/→` 又常被键盘固件直接翻译成**普通方向键**（实测发出 `LEFT`/`RIGHT`，与方向键无法区分）—— 这种情况软件层无解（绑裸方向键会废掉方向键本身）。所以补一组顺手的组合键兜底。媒体控制走 `playerctl`，只对支持 MPRIS 的播放器生效。
 
 ### 壁纸 / 剪贴板 / 电源
 

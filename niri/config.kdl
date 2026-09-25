@@ -457,6 +457,17 @@ binds {
     XF86AudioNext allow-when-locked=true hotkey-overlay-title="下一曲" { spawn "playerctl" "next"; }
     XF86AudioPrev allow-when-locked=true hotkey-overlay-title="上一曲" { spawn "playerctl" "previous"; }
 
+    // 媒体控制的键盘组合键（2026-09-25 新增）
+    // 来由：外接键盘 Microdia 2.4G Dongle 不支持媒体键；
+    //   笔记本内置键盘的 Fn+← / Fn+→ 在固件层被翻译成**普通方向键**
+    //   （实测发出 LEFT=105 / RIGHT=106，与方向键无法区分），
+    //   所以「把 Fn+←/→ 绑成切歌」在软件层做不到 —— 绑裸 LEFT/RIGHT 会废掉方向键。
+    //   改用下面这组外接键盘上顺手的空闲组合键（Z 在左=上一曲，X 在右=下一曲）。
+    // 备份：config.kdl.bak-20260925-media-keys
+    Super+Z hotkey-overlay-title="上一曲" { spawn "playerctl" "previous"; }
+    Super+X hotkey-overlay-title="下一曲" { spawn "playerctl" "next"; }
+    Super+Shift+X hotkey-overlay-title="播放/暂停" { spawn "playerctl" "play-pause"; }
+
     // ================= 屏幕电源 (2026-09-13 新增) =================
     // 立刻熄屏（DPMS off）。按任意键/动鼠标会亮回来。
     Super+Shift+O hotkey-overlay-title="立刻熄屏" { power-off-monitors; }
