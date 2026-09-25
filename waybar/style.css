@@ -1,3 +1,4 @@
+/* ===== Catppuccin Mocha 配色 ===== */
 * {
     font-family: "JetBrainsMono Nerd Font", "JetBrainsMono NF", monospace;
     font-size: 13px;
@@ -7,12 +8,12 @@
 }
 
 window#waybar {
-    background-color: rgba(18, 22, 28, 0.86);
-    color: #e6edf3;
-    border-bottom: 1px solid rgba(120, 200, 160, 0.15);
+    background-color: rgba(17, 17, 27, 0.75);
+    color: #cdd6f4;
+    border-bottom: 1px solid rgba(137, 180, 250, 0.1);
 }
 
-/* ===== 顶部所有模块统一间距 ===== */
+/* ===== 所有模块统一基础样式 ===== */
 #custom-workspaces,
 #custom-window,
 #clock,
@@ -21,92 +22,185 @@ window#waybar {
 #cpu,
 #memory,
 #battery,
-#tray {
+#tray,
+#custom-power,
+#pulseaudio,
+#backlight,
+#temperature {
     padding: 0 10px;
-    margin: 6px 3px;
+    margin: 5px 3px;
     border-radius: 8px;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: all 0.3s ease;
+}
+
+/* ===== 悬停效果 ===== */
+#custom-workspaces:hover,
+#custom-window:hover,
+#clock:hover,
+#idle_inhibitor:hover,
+#network:hover,
+#cpu:hover,
+#memory:hover,
+#battery:hover,
+#tray:hover,
+#custom-power:hover,
+#pulseaudio:hover,
+#backlight:hover,
+#temperature:hover {
+    background-color: rgba(137, 180, 250, 0.15);
 }
 
 /* ===== 工作区（niri） ===== */
 #custom-workspaces {
-    background-color: rgba(255, 255, 255, 0.05);
-    padding: 0 6px;
-    letter-spacing: 1px;
+    background-color: rgba(49, 50, 68, 0.5);
+    padding: 0 8px;
+    font-weight: 500;
+}
+
+#custom-workspaces:hover {
+    background-color: rgba(137, 180, 250, 0.2);
 }
 
 /* ===== 当前窗口标题 ===== */
 #custom-window {
-    background-color: rgba(255, 255, 255, 0.04);
-    color: #90a0b4;
+    background-color: rgba(49, 50, 68, 0.3);
+    color: #a6adc8;
     font-style: italic;
 }
 
 /* ===== 时钟 ===== */
 #clock {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: #e6edf3;
-    font-weight: 600;
+    background-color: rgba(137, 180, 250, 0.15);
+    color: #b4befe;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 0 14px;
+}
+
+#clock:hover {
+    background-color: rgba(137, 180, 250, 0.25);
 }
 
 /* ===== 空闲抑制 ===== */
 #idle_inhibitor {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(49, 50, 68, 0.4);
+    color: #585b70;
 }
+
 #idle_inhibitor.activated {
-    color: #3fbf8f;
+    background-color: rgba(166, 227, 161, 0.15);
+    color: #a6e3a1;
 }
 
 /* ===== 网络 ===== */
 #network {
-    background-color: rgba(88, 166, 255, 0.12);
-    color: #8fc3ff;
+    background-color: rgba(137, 180, 250, 0.12);
+    color: #89b4fa;
 }
+
 #network.disconnected {
-    background-color: rgba(248, 81, 73, 0.15);
-    color: #f85149;
+    background-color: rgba(243, 139, 168, 0.15);
+    color: #f38ba8;
+}
+
+#network.linked {
+    background-color: rgba(249, 226, 175, 0.15);
+    color: #f9e2af;
 }
 
 /* ===== CPU ===== */
 #cpu {
-    background-color: rgba(179, 127, 255, 0.12);
-    color: #c3a6ff;
+    background-color: rgba(203, 166, 247, 0.12);
+    color: #cba6f7;
 }
 
 /* ===== 内存 ===== */
 #memory {
-    background-color: rgba(63, 191, 143, 0.12);
-    color: #7adcb4;
+    background-color: rgba(166, 227, 161, 0.12);
+    color: #a6e3a1;
+}
+
+/* ===== CPU / 内存高负载 ===== */
+#cpu.high,
+#memory.high {
+    background-color: rgba(243, 139, 168, 0.2);
+    color: #f38ba8;
 }
 
 /* ===== 电池 ===== */
 #battery {
-    background-color: rgba(255, 214, 90, 0.12);
-    color: #ffd65a;
+    background-color: rgba(249, 226, 175, 0.12);
+    color: #f9e2af;
 }
+
 #battery.charging,
 #battery.plugged {
-    color: #3fbf8f;
+    background-color: rgba(166, 227, 161, 0.15);
+    color: #a6e3a1;
 }
+
 #battery.warning {
-    color: #f0883e;
+    background-color: rgba(250, 179, 135, 0.2);
+    color: #fab387;
 }
+
 #battery.critical {
-    color: #f85149;
-    animation-name: blink;
-    animation-duration: 0.8s;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
+    background-color: rgba(243, 139, 168, 0.25);
+    color: #f38ba8;
 }
-@keyframes blink {
-    to { background-color: rgba(248, 81, 73, 0.4); }
+
+/* ===== 音量 ===== */
+#pulseaudio {
+    background-color: rgba(180, 190, 254, 0.12);
+    color: #b4befe;
+}
+
+#pulseaudio.muted {
+    background-color: rgba(166, 173, 200, 0.1);
+    color: #585b70;
+}
+
+/* ===== 亮度 ===== */
+#backlight {
+    background-color: rgba(249, 226, 175, 0.12);
+    color: #f9e2af;
+}
+
+/* ===== CPU 温度（凉 → 温 → 烫） =====
+   常态刻意用冷色：本机 i7-13650HX 平时就在 85-88°C，
+   若常态也用橙色，90°C 的 warning 变色就完全看不出来了。 */
+#temperature {
+    background-color: rgba(137, 220, 235, 0.12);
+    color: #89dceb;
+}
+
+#temperature.warning {
+    background-color: rgba(250, 179, 135, 0.18);
+    color: #fab387;
+}
+
+#temperature.critical {
+    background-color: rgba(243, 139, 168, 0.25);
+    color: #f38ba8;
+    font-weight: 700;
 }
 
 /* ===== 托盘 ===== */
 #tray {
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: rgba(49, 50, 68, 0.4);
     padding: 0 8px;
+}
+
+/* ===== 电源菜单 ===== */
+#custom-power {
+    background-color: rgba(243, 139, 168, 0.15);
+    color: #f38ba8;
+    font-size: 15px;
+    padding: 0 12px;
+}
+
+#custom-power:hover {
+    background-color: rgba(243, 139, 168, 0.3);
 }
 
 /* ===== 标签聚焦 ===== */

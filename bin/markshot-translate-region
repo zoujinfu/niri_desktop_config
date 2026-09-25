@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# 框选屏幕一块区域 → OCR 识别 → 翻译成中文 → 用 mark-shot 的贴图窗口把译文「原地盖在原文上」
+#
+# ── 为什么绕这么一圈 ───────────────────────────────────────────────
+# mark-shot **不支持给 OCR / 翻译绑快捷键**。查过它的源码
+# (src/app_config_defaults.cpp)：shortcuts 只有 tools / actions / startup 三个子节点，
+# actions 里只有 copy / save / pin（外加 upload/undo/redo/cancel/openWith/extensions/
+# scrollCapture/ocrCopy/clear 等），**整个 shortcuts 里没有任何 OCR 或 translate 项**；
+# 译文只能从贴图窗口的右键菜单触发。
+# 所以这条路改成 niri 侧一键：
+#     slurp 选区 → grim 截图 → mark-shot --pin-image 打开贴图
+# 再用 MARK_SHOT_PINNED_AUTO_OCR=1 让贴图**自动** OCR，
+# 配合 config.json 里 translation.autoAfterOcr=true，OCR 完会自动翻译并原地渲染。
+#
+# ⚠️ 环境变量只在这个脚本里加，**不写进 config.json** —— 否则你平时 Ctrl+P 钉的每一张
+#    图都会自动 OCR，平白吃 CPU。
+#
+# ── 依赖 ───────────────────────────────────────────────────────────
+#   slurp / grim                 选区与截图
+#   mark-shot + mark-shot-ocr    OCR（backend 走 config.json 的 ocr.backend=auto→tesseract）
+#   mark-shot-openai-shim.service  本地翻译后端，没起来就只能 OCR 出原文、没有译文
+#
+# ── 排查 ───────────────────────────────────────────────────────────
+#   译文出不来时依次看：
+#     systemctl --user status mark-shot-openai-shim
+#     journalctl --user -u mark-shot-openai-shim -n 20   # 应有 "POST /v1/chat/completions" 200
+#     curl -s http://127.0.0.1:8787/v1/models            # shim 活着才有输出
+set -u
+
+self="$(basename "$0")"
+
+usage() {
+    cat <<EOF
+用法: $self [-g 几何]
+
+  -g, --geometry X,Y WxH   跳过 slurp 交互选区, 直接用给定区域（调试/测试用）
+                           注意是 grim 的格式: 先"x,y"再空格再"宽x高",
+                           例如 "510,456 900x210"。不是 WxH+X+Y。
+  -h, --help               显示本帮助
+
+不带参数时: 拖鼠标选区, 按 Esc 取消。
+EOF
+    exit "${1:-0}"
+}
+
+geometry=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -g|--geometry) geometry="${2:-}"; shift 2 ;;
+        -h|--help)     usage 0 ;;
+        *) echo "$self: 未知参数 $1" >&2; usage 1 ;;
+    esac
+done
+
+# 统一校验几何格式。合法形如 "510,456 900x210"
+# （slurp 的默认输出格式就是 "%x,%y %wx%h\n"，与 grim -g 一致，所以能直接透传）。
+# 顺便挡掉"只点一下没拖动"产生的 0 尺寸选区。
+valid_geometry() {
+    printf '%s' "$1" | grep -Eq '^[0-9]+,[0-9]+ [1-9][0-9]*x[1-9][0-9]*$'
+}
+
+# ---------- 1) 选区 ----------
+if [ -z "$geometry" ]; then
+    # -f 显式指定格式(不依赖默认值), -d 显示尺寸, -b 压暗背景, -c/-w 用 Catppuccin 蓝描边
+    # 用户按 Esc 或右键取消时 slurp 返回非 0 → 静默退出, 不弹提示
+    if ! geometry=$(slurp -f '%x,%y %wx%h' -d -b 00000060 -c 89b4faff -w 2 2>/dev/null); then
+        exit 0
+    fi
+fi
+
+if [ -z "$geometry" ] || ! valid_geometry "$geometry"; then
+    # 没选 / 取消 / 只点一下没拖动 —— 都不值得报错打扰用户
+    exit 0
+fi
+
+# ---------- 2) 截取该区域 ----------
+tmp="${XDG_RUNTIME_DIR:-/tmp}/markshot-translate-region.png"
+rm -f "$tmp"
+
+if ! grim -g "$geometry" "$tmp" 2>/dev/null || [ ! -s "$tmp" ]; then
+    notify-send -a "截图翻译" "截图失败" "区域: $geometry" 2>/dev/null || true
+    exit 1
+fi
+
+# ---------- 3) 交给 mark-shot：自动 OCR + 自动翻译 ----------
+# 贴图窗口由 config.kdl 的 window-rule(app-id="mark-shot", open-floating=true) 保证浮动。
+# Esc 关掉即可；想留着对照就拖到边上别关。
+#
+# ⚠️ 四个环境变量是刻意全部钉死的, 不依赖 config.json 当前值。
+#    原因: mark-shot 的 OCR 结果窗口 / 设置界面是**可写**的 —— 2026-09-24 实测
+#    config.json 里的 translation.targetLanguage 被 UI 改成了 "English"
+#    （于是英译英, 输出还是英文, 看起来像"翻译没生效"），
+#    ocr.backend 与 translation.autoAfterOcr 同理可被改掉。
+#    在脚本里强制指定, 热键就永远不会因为配置漂移而失灵。
+export MARK_SHOT_PINNED_AUTO_OCR=1                    # 贴图后立刻后台 OCR（≈ pinnedWindow.autoOcr=true）
+export MARK_SHOT_TRANSLATION_AUTO_AFTER_OCR=1         # OCR 成功后自动翻译（≈ translation.autoAfterOcr=true）
+export MARK_SHOT_TRANSLATION_TARGET_LANGUAGE="Simplified Chinese"
+export MARK_SHOT_OCR_BACKEND=auto                     # ≈ ocr.backend="auto"：先试 rapidocr, 失败回落 tesseract
+exec mark-shot --pin-image "$tmp"

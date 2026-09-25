@@ -12,6 +12,13 @@ width=320
 anchor=top-right
 layer=overlay
 icons=1
+history=1
+max-history=200
+max-visible=5
+group-by=app-name
+actions=true
+on-button-left=dismiss
+on-button-right=dismiss
 
 [urgency=low]
 default-timeout=5000

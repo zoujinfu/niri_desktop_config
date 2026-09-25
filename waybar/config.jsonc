@@ -2,13 +2,16 @@
     // ===== 全局外观 =====
     "layer": "top",
     "position": "top",
-    "height": 34,
-    "spacing": 6,
+    "height": 38,
+    "spacing": 4,
+    "margin-top": 4,
+    "margin-left": 8,
+    "margin-right": 8,
     "modules-left": ["custom/workspaces", "custom/window"],
     "modules-center": ["clock"],
-    "modules-right": ["idle_inhibitor", "network", "cpu", "memory", "battery", "tray"],
+    "modules-right": ["pulseaudio", "backlight", "network", "cpu", "temperature", "memory", "battery", "idle_inhibitor", "tray", "custom/power"],
 
-    // ===== 工作区（用 niri IPC 脚本实现） =====
+    // ===== 工作区（直接查询 niri IPC, 1 秒轮询足够实时） =====
     "custom/workspaces": {
         "exec": "$HOME/.config/waybar/scripts/niri-workspaces.py",
         "return-type": "json",
@@ -16,22 +19,53 @@
         "tooltip": true
     },
 
-    // ===== 当前窗口标题（用 niri IPC 脚本实现） =====
+    // ===== 当前窗口标题（直接查询 niri IPC） =====
     "custom/window": {
         "exec": "$HOME/.config/waybar/scripts/niri-window.py",
         "return-type": "text",
         "interval": 1,
         "format": "{}",
-        "max-length": 50,
+        "max-length": 45,
         "tooltip": false
     },
 
     // ===== 时钟 =====
     "clock": {
         "format": "  {:%m-%d %H:%M}",
-        "format-alt": "{:%Y-%m-%d %H:%M:%S}",
-        "tooltip-format": "{:%Y年%m月%d日 %A}\n{calendar}",
+        "format-alt": "{:%Y年%m月%d日 %A}\n{:%H:%M:%S}",
+        "tooltip-format": "<big>{:%Y年%m月%d日 %A}</big>\n<tt>{calendar}</tt>",
         "on-click": "gnome-calendar"
+    },
+
+    // ===== 音量 =====
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "scroll-step": 5,
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip-format": "{desc} / {volume}%",
+        "interval": 1
+    },
+
+    // ===== 亮度 =====
+    "backlight": {
+        "device": "nvidia_0",
+        "format": "{icon} {percent}%",
+        "format-icons": ["", "", "", "", ""],
+        "on-scroll-up": "brightnessctl set +5%",
+        "on-scroll-down": "brightnessctl set 5%-",
+        "tooltip": false,
+        "interval": 2
     },
 
     // ===== 空闲抑制（播放视频/全屏时防休眠） =====
@@ -41,42 +75,62 @@
             "activated": "",
             "deactivated": ""
         },
-        "tooltip": true
+        "tooltip-format": "防休眠: {status}",
+        "start-when-playing": true
     },
 
     // ===== 网络 =====
     "network": {
-        "format-wifi": "  {essid} {signalStrength}%",
-        "format-ethernet": "  {ifname} {ipaddr}",
+        "format-wifi": "  {essid}",
+        "format-ethernet": "  {ipaddr}",
         "format-disconnected": "  ✗",
-        "format-linked": "  {ifname} 无网络",
+        "format-linked": "  {ifname}",
         "format-alt": "{ifname}: {ipaddr}/{cidr}",
-        "tooltip-format": "{essid} / 信号 {signalStrength}% ({ipaddr})",
+        "tooltip-format": "{ifname}: {ipaddr}\n网关: {gwaddr}\n信号: {signalStrength}%",
         "interval": 5,
         "on-click": "nm-connection-editor"
     },
 
     // ===== CPU =====
     "cpu": {
-        "format": "  {usage}%",
-        "format-icons": {
-            "low": "",
-            "medium": "",
-            "high": ""
+        "format": "{icon} {usage}%",
+        "states": {
+            "high": 85
         },
-        "tooltip": false,
+        "format-icons": {
+            "low": "",
+            "medium": "",
+            "high": ""
+        },
+        "tooltip-format": "CPU: {usage}%\n{avg_frequency}GHz",
         "interval": 3
+    },
+
+    // ===== CPU 温度（coretemp 封装温度） =====
+    // 用 hwmon-name 按名字匹配，而非写死 hwmonN：hwmon 编号每次重启可能漂移，
+    // 写死路径会随机失效。input-filename 必须同时给，否则 waybar 会拒绝该配置。
+    "temperature": {
+        "hwmon-name": "coretemp",
+        "input-filename": "temp1_input",
+        "format": "{temperatureC}°C",
+        "warning-threshold": 90,
+        "critical-threshold": 97,
+        "tooltip-format": "CPU 封装温度: {temperatureC}°C",
+        "interval": 5
     },
 
     // ===== 内存 =====
     "memory": {
-        "format": "  {}%",
+        "format": "{icon} {percentage}%",
+        "states": {
+            "high": 85
+        },
         "format-icons": {
             "low": "",
             "medium": "",
             "high": ""
         },
-        "tooltip": true,
+        "tooltip-format": "内存: {used:0.1f}G / {total:0.1f}G ({percentage}%)",
         "interval": 3
     },
 
@@ -86,18 +140,27 @@
             "warning": 30,
             "critical": 15
         },
-        "format": "  {capacity}% {icon}",
-        "format-charging": "  {capacity}% ",
-        "format-plugged": "  {capacity}% ",
-        "format-alt": "  {time} {icon}",
-        "format-icons": ["", "", "", "", ""],
-        "tooltip": true,
+        "format": "{icon} {capacity}%",
+        "format-charging": "{icon} {capacity}% ",
+        "format-plugged": "{icon} {capacity}% ",
+        "format-alt": "{time}",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format": "{timeTo}\n{capacity}% ({power}W)",
         "interval": 10
     },
 
     // ===== 托盘 =====
     "tray": {
         "icon-size": 18,
-        "spacing": 8
+        "spacing": 8,
+        "show-passive-items": true
+    },
+
+    // ===== 电源菜单 =====
+    "custom/power": {
+        "format": "",
+        "on-click": "/home/sky/.local/bin/waybar-power-menu.sh",
+        "tooltip-format": "电源菜单",
+        "escape": true
     }
 }

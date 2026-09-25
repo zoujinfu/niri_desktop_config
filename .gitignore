@@ -2,3 +2,9 @@
 *.log
 __pycache__/
 *.pyc
+
+# 本地备份文件（niri / waybar 配置改动前都会留 .bak-<日期>）
+*.bak
+*.bak-*
+*.backup
+*.pre-opt.bak
