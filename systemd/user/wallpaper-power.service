@@ -1,0 +1,21 @@
+[Unit]
+Description=Wallpaper power gate: start/stop wallpaper on AC/battery changes
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/home/sky/.local/bin/wallpaper-power-daemon.sh
+# upower 退出或崩溃时自动拉回来, 保证电源事件一直有人听
+Restart=always
+RestartSec=5
+# 结束整个 cgroup(含 upower --monitor 与管道里的 bash 子进程)。
+# 用 process 只杀主 PID 会留下 upower 和 while 子 shell, restart 后新旧两个一起监听,
+# 日志与动作都翻倍(实测 2026-11-05 09:03)。壁纸进程不受影响 —— 它由
+# wallpaper-rotate.sh 用 setsid 拉起, 早已脱离本 unit 的 cgroup。
+KillMode=control-group
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+
+[Install]
+WantedBy=graphical-session.target

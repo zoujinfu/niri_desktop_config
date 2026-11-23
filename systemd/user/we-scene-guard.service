@@ -1,0 +1,8 @@
+[Unit]
+Description=检查 Wallpaper Engine 资产是否被 Steam 覆盖回 4K，若被覆盖则自动降码率
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/we-scene-guard.sh
+Nice=15
+IOSchedulingClass=idle

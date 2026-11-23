@@ -1,0 +1,10 @@
+[Unit]
+Description=Check every 2 minutes that the Wallpaper Engine wallpaper is still running
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=10s
+
+[Install]
+WantedBy=default.target

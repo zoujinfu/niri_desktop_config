@@ -1,131 +1,97 @@
 // ============================================================
-// Niri 配置 - Ubuntu 24.04
-// 仿 Windows 风格 + 效率优先
-//
-// 配置文件路径:
-//   ~/.config/niri/config.kdl
-//
-// 修改后校验语法(有错会提示, 修完再保存):
-//   niri validate
-//
-// 注意: niri 保存配置文件后会自动热加载, 无需手动重启。
+// Niri 配置 —— Arch Linux (niri 26.04)
+// 路径: ~/.config/niri/config.kdl
+// 修改后执行 `niri validate` 校验；保存后会自动热加载。
 // ============================================================
 
-
 // ============================================================
-// 输入设备 (键盘 / 触摸板 / 鼠标)
+// 输入设备
 // ============================================================
 
 input {
     keyboard {
         xkb {
-            // 留空 = 使用系统键盘布局。
-            //
-            // 示例:
-            // layout "us"                    - 美国键盘
-            // layout "us,cn"                 - 美式 + 中文
-            // options "grp:win_space_toggle" - 用 Win+空格 切换中英文
+            // 留空 = 使用系统键盘布局（当前为 English (US)）。
         }
     }
 
     touchpad {
-        tap                // 触摸板轻点=单击
-        natural-scroll     // 自然滚动(手指向下内容向下，类似手机)
-        scroll-factor 0.8  // 滚动速度略慢，更精准
+        tap
+        natural-scroll
+        scroll-factor 0.8
     }
 
-    mouse {}   // 鼠标无特殊配置
+    mouse {}
 
-    // 在「上一个工作区」再按一次回退键时自动弹回（让 Super+Backspace 更顺手）
+    // 在「上一个工作区」再按一次时自动弹回
     workspace-auto-back-and-forth
 }
 
 
 // ============================================================
-// 开机自启动程序
+// 开机自启动
 // ============================================================
 
-// niri 事件流守护 (waybar 工作区/窗口标题实时更新)
-// 已改为 waybar 轮询 niri IPC 直接读取，无需后台守护。
-// spawn-at-startup "python3" "/home/sky/.config/waybar/scripts/niri-event-daemon.py"
+// 桌面外壳：状态栏 / 通知 / 启动器 / 锁屏 / 剪贴板 / OSD / polkit
+spawn-at-startup "noctalia" "--daemon"
 
-// 状态栏 (强制走 Wayland 后端, 避免因为 X11 的 $DISPLAY 导致无法启动)
-spawn-at-startup "env" "GDK_BACKEND=wayland" "waybar"
-
-// 通知守护 (弹通知用)
-spawn-at-startup "mako"
-// Vicinae server 守护进程 (Raycast 风格启动器, 试用期, Super+A 唤起)
-spawn-at-startup "/home/sky/.local/bin/vicinae" "server"
-
-// 桌面壁纸 (Wallpaper Engine 动态壁纸，每小时轮换)
+// 动态壁纸（30 分钟自动轮换由 systemd user timer 负责）
 spawn-at-startup "/home/sky/.local/bin/wallpaper-rotate.sh"
 
-
-
-// Polkit 认证代理 (pkexec 弹密码框必须)
-spawn-at-startup "/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1"
-
-// 授权 root 访问显示服务器 (解决 timeshift/gparted 等 GUI 需要 sudo 的程序无法启动的问题)
-spawn-at-startup "xhost" "+si:localuser:root"
+// Vicinae 启动器服务（Alt+Space 唤起）
+spawn-at-startup "vicinae" "server"
 
 
 // ============================================================
 // 通用选项
 // ============================================================
 
-// 截图保存位置 (文件名含日期时间)
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
-// 优先使用服务端装饰(即窗口边框由合成器绘制, 而非应用自己画)
+// 窗口边框由合成器绘制
 prefer-no-csd
 
-// 鼠标指针
 cursor {
-    // 可换成已安装的其他鼠标主题
-    // xcursor-theme "Adwaita"
-    // xcursor-size 24
+    hide-when-typing
+    hide-after-inactive-ms 1500
+}
 
-    hide-when-typing        // 打字时自动隐藏鼠标
-    hide-after-inactive-ms 1500   // 静止 1.5 秒后隐藏鼠标
+// 快捷键面板只显示已绑定的按键
+hotkey-overlay {
+    hide-not-bound
 }
 
 
 // ============================================================
-// 布局 (窗口如何排列)
+// 布局
 // ============================================================
 
 layout {
-    // 列/窗口之间的间距(像素)
     gaps 12
 
-    // 是否让当前聚焦列尽量居中: never=不强制居中
-    center-focused-column "never"
+    // 必须透明，否则会盖住 backdrop 层的动态壁纸
+    background-color "transparent"
 
-    // 当只剩一列可见时, 让它居中
+    center-focused-column "never"
     always-center-single-column
 
-    // 预设列宽(按屏幕宽度的比例)
     preset-column-widths {
         proportion 0.33333
         proportion 0.5
         proportion 0.66667
     }
 
-    // 新建窗口的默认列宽
     default-column-width {
         proportion 0.5
     }
 
-    // ===== 2026-09-13 新增：窗口装饰（之前全用默认值，焦点环是默认蓝）=====
-
-    // 焦点环：当前窗口的描边，换成 Catppuccin Mocha Blue
+    // Catppuccin Mocha 配色
     focus-ring {
         width 3
         active-color "#89b4fa"
         inactive-color "#45475a"
     }
 
-    // 投影：给浮动窗口/贴图一点层次感
     shadow {
         on
         softness 30
@@ -134,7 +100,6 @@ layout {
         color "#0007"
     }
 
-    // 标签页指示器：Super+Shift+T 切标签页时的视觉提示（之前完全看不出来）
     tab-indicator {
         width 4
         length total-proportion=1.0
@@ -146,14 +111,13 @@ layout {
         urgent-color "#f38ba8"
     }
 
-    // 窗口高度分档：★ 必须补！否则 Super+Ctrl+E 的 switch-preset-window-height 是空转
+    // Super+Ctrl+E 切换窗口高度所需
     preset-window-heights {
         proportion 0.33333
         proportion 0.5
         proportion 0.66667
     }
 
-    // 拖拽窗口到屏幕边缘时的插入位置提示
     insert-hint {
         color "#89b4fa"
     }
@@ -161,13 +125,11 @@ layout {
 
 
 // ============================================================
-// 总览 (Overview，Super+Tab)
+// 总览
 // ============================================================
 
 overview {
-    // 缩得更小一点，一屏看到更多窗口
     zoom 0.5
-    // 背景用主题底色，避免默认灰
     backdrop-color "#1e1e2e"
     workspace-shadow {
         off
@@ -176,11 +138,10 @@ overview {
 
 
 // ============================================================
-// 触摸板/鼠标手势
+// 手势
 // ============================================================
 
 gestures {
-    // 拖东西到屏幕边缘时自动滚动画布（拖文件跨列时特别顺手）
     dnd-edge-view-scroll {
         trigger-width 30
         delay-ms 100
@@ -190,97 +151,68 @@ gestures {
 
 
 // ============================================================
-// 工作区
-// ============================================================
-//
-// niri 默认使用"动态工作区"(用哪个就出现哪个, 无固定数量)。
-//
-// Super + 1..9   -> 切换到对应工作区
-// Super + Ctrl + 1..9 -> 把当前列移到该工作区
-//
-// 工作区也可以在多个显示器之间移动。
-
-
-// ============================================================
-// 窗口规则 (统一窗口外观)
+// 窗口规则
 // ============================================================
 
-// 给平铺/浮动窗口统一加圆角
 window-rule {
-    geometry-corner-radius 12   // 圆角半径 12 像素
-    clip-to-geometry true       // 内容超出圆角则裁剪(让圆角更干净)
+    geometry-corner-radius 12
+    clip-to-geometry true
 }
 
-// 翻译弹窗 - 强制浮动
-// 注意 app-id 要跟窗口实际报的一模一样: 实测是 "Translate.py" (首字母大写,
-// 由 GTK 从程序名推导)。写成小写 "translate.py" 不匹配, 规则不生效, 窗口会被平铺。
+// app-id 必须与窗口实际上报的大小写完全一致
 window-rule {
     match app-id="Translate.py"
     open-floating true
 }
 
-// copyclip 剪贴板历史 - 强制浮动
-window-rule {
-    match app-id="copyclip"
-    open-floating true
-}
-
-// flameshot 截图工具 - 强制浮动
-window-rule {
-    match app-id="flameshot"
-    open-floating true
-    open-fullscreen false
-}
-
-// imv 悬浮图片(截图钉住) - 强制浮动
-window-rule {
-    match app-id="imv"
-    open-floating true
-    open-maximized false
-}
-
-// mark-shot 截图标注工具 - 强制浮动
-// 为什么需要: Ubuntu 24.04 的官方 deb 没打包 layer-shell 插件(源里 layer-shell-qt
-// 只有 Qt5 版, 缺 Qt6 版), 选区覆盖层会退化成普通窗口。没这条规则时 niri 会把它当成
-// 新列平铺, 挤压/重排其它窗口。贴图(pin)窗口本来就会浮动, 这条规则对它无副作用。
 window-rule {
     match app-id="mark-shot"
     open-floating true
 }
 
+// VSCode 毛玻璃：半透明 + 背景模糊（niri 26.04 起支持 background-effect）
+// 前提：VSCode 内部背景必须设为半透明，见 settings.json 里的 workbench.colorCustomizations
+// 注意：blur 默认走 xray 模式，模糊的是壁纸而非下层窗口，这是 niri 的优化行为
+// app-id 两种写法各建一条规则：同一条规则内的多个 match 是「且」关系，不能并列写。
+window-rule {
+    match app-id="^code$"
 
-// 示例: 想让 Firefox 默认最大化, 取消下面注释即可
-//
-// window-rule {
-//     match app-id=r#"^firefox$"#
-//     open-maximized true
-// }
+    opacity 0.85
+    background-effect {
+        blur true
+    }
+}
+
+window-rule {
+    match app-id="^com\\.microsoft\\.VSCode$"
+
+    opacity 0.9
+    background-effect {
+        blur true
+    }
+}
 
 
 // ============================================================
-// 快捷键 (所有按键绑定)
+// 快捷键
 // ============================================================
 
 binds {
 
+    // hotkey-overlay-title=null：按键照常生效，只是不显示在快捷键面板。
+
     // ================= 帮助 =================
-    Super+Shift+Slash hotkey-overlay-title="显示快捷键帮助" { show-hotkey-overlay; }
-    Super+grave hotkey-overlay-title="快捷键速查表" { spawn "niri-cheatsheet"; }
+    // Super+? 在 niri 中写作 Super+Shift+Slash
+    Super+Shift+Slash hotkey-overlay-title="显示快捷键帮助 (Super+?)" { show-hotkey-overlay; }
 
     // ================= 应用启动 =================
-    // 用绝对路径指向用户级那份 kitty（~/.local/kitty.app，0.48.2）。
-    // ⚠️ 2026-09-15 复核更正（原注释有两处不成立）：
-    //   ① 系统 apt 版 kitty **已经不存在**（dpkg 无包、/usr/bin/kitty 与 /bin/kitty 都没有），
-    //      所以「apt 装的 0.32.2 有双触发 bug」这个顾虑已经不适用；
-    //   ② 因此这里**不是非写全路径不可** —— 全机只有这一份 kitty，怎么写都是 0.48.2。
-    //      保留绝对路径只是明确的防御，改回 "kitty" 也能正常工作。
-    // 详见 [[Kitty 终端配置]] 笔记。
-    Super+T hotkey-overlay-title="打开终端" { spawn "/home/sky/.local/kitty.app/bin/kitty"; }
+    Super+T hotkey-overlay-title="打开终端" { spawn "/usr/bin/kitty"; }
     Super+E hotkey-overlay-title="文件管理器" { spawn "nautilus"; }
     Super+Delete hotkey-overlay-title="回收站" { spawn "sh" "-c" "gio open trash:///"; }
-    // Alt+Space hotkey-overlay-title="应用启动器" { spawn "fuzzel"; }
-    // Vicinae (Raycast 风格启动器, 试用期) —— 与 fuzzel 并行, 详见 Niri-脚本工具 笔记
-    Alt+Space hotkey-overlay-title="Vicinae 启动器" { spawn "/home/sky/.local/bin/vicinae" "toggle"; }
+    Alt+Space hotkey-overlay-title="应用启动器 (Vicinae)" { spawn "vicinae" "toggle"; }
+    Super+P hotkey-overlay-title="番茄钟 开始/暂停" { spawn "noctalia" "msg" "plugin" "thepunkoff/pomodoro:pomodoro" "all" "toggle"; }
+    Super+Ctrl+P hotkey-overlay-title="番茄钟 面板" { spawn "noctalia" "msg" "panel-toggle" "thepunkoff/pomodoro:panel"; }
+    Super+Alt+P hotkey-overlay-title="番茄钟 重置全部" { spawn "noctalia" "msg" "plugin" "thepunkoff/pomodoro:pomodoro" "all" "reset-all"; }
 
     // ================= 基础窗口管理 =================
     Super+W hotkey-overlay-title="关闭窗口" { close-window; }
@@ -293,254 +225,230 @@ binds {
     Super+Shift+F hotkey-overlay-title="切换浮动/平铺" { toggle-window-floating; }
     Super+Shift+T hotkey-overlay-title="切换列标签页显示" { toggle-column-tabbed-display; }
 
-    // ================= 焦点移动 (方向键 + H/L) =================
-    // 注：Super+J / Super+K 已让给「工作区上/下切换」（见下方工作区段），
-    //     原「列内焦点上/下移动」如需使用请走 Super+Up / Super+Down。
-    Super+Left hotkey-overlay-title="焦点左移" { focus-column-left; }
-    Super+Right hotkey-overlay-title="焦点右移" { focus-column-right; }
-    Super+Up hotkey-overlay-title="焦点上移" { focus-window-up; }
-    Super+Down hotkey-overlay-title="焦点下移" { focus-window-down; }
-    Super+H hotkey-overlay-title="焦点左移" { focus-column-left; }
-    Super+L hotkey-overlay-title="焦点右移" { focus-column-right; }
+    // ================= 焦点移动（面板隐藏） =================
+    // Super+J / Super+K 用于工作区上下切换，列内上下焦点请用 Super+Up / Super+Down。
+    Super+Left hotkey-overlay-title=null { focus-column-left; }
+    Super+Right hotkey-overlay-title=null { focus-column-right; }
+    Super+Up hotkey-overlay-title=null { focus-window-up; }
+    Super+Down hotkey-overlay-title=null { focus-window-down; }
+    Super+H hotkey-overlay-title=null { focus-column-left; }
+    Super+L hotkey-overlay-title=null { focus-column-right; }
 
-    // ================= 移动窗口/列 (方向键 + HJKL) =================
-    Super+Ctrl+Left hotkey-overlay-title="列左移" { move-column-left; }
-    Super+Ctrl+Right hotkey-overlay-title="列右移" { move-column-right; }
-    Super+Ctrl+Up hotkey-overlay-title="窗口上移" { move-window-up; }
-    Super+Ctrl+Down hotkey-overlay-title="窗口下移" { move-window-down; }
-    Super+Ctrl+H hotkey-overlay-title="列左移" { move-column-left; }
-    Super+Ctrl+L hotkey-overlay-title="列右移" { move-column-right; }
-    Super+Ctrl+K hotkey-overlay-title="窗口上移" { move-window-up; }
-    Super+Ctrl+J hotkey-overlay-title="窗口下移" { move-window-down; }
+    // ================= 移动窗口/列（面板隐藏） =================
+    Super+Ctrl+Left hotkey-overlay-title=null { move-column-left; }
+    Super+Ctrl+Right hotkey-overlay-title=null { move-column-right; }
+    Super+Ctrl+Up hotkey-overlay-title=null { move-window-up; }
+    Super+Ctrl+Down hotkey-overlay-title=null { move-window-down; }
+    Super+Ctrl+H hotkey-overlay-title=null { move-column-left; }
+    Super+Ctrl+L hotkey-overlay-title=null { move-column-right; }
+    Super+Ctrl+K hotkey-overlay-title=null { move-window-up; }
+    Super+Ctrl+J hotkey-overlay-title=null { move-window-down; }
 
-    // ================= 循环/跨边界导航 (Super+Alt) =================
-    Super+Alt+Left hotkey-overlay-title="循环焦点左移" { focus-column-left-or-last; }
-    Super+Alt+Right hotkey-overlay-title="循环焦点右移" { focus-column-right-or-first; }
-    Super+Alt+Up hotkey-overlay-title="上移或切到上个工作区" { focus-window-or-workspace-up; }
-    Super+Alt+Down hotkey-overlay-title="下移或切到下个工作区" { focus-window-or-workspace-down; }
-    Super+Alt+H hotkey-overlay-title="循环焦点左移" { focus-column-left-or-last; }
-    Super+Alt+L hotkey-overlay-title="循环焦点右移" { focus-column-right-or-first; }
-    Super+Alt+K hotkey-overlay-title="上移或切到上个工作区" { focus-window-or-workspace-up; }
-    Super+Alt+J hotkey-overlay-title="下移或切到下个工作区" { focus-window-or-workspace-down; }
+    // ================= 循环/跨边界导航（面板隐藏） =================
+    Super+Alt+Left hotkey-overlay-title=null { focus-column-left-or-last; }
+    Super+Alt+Right hotkey-overlay-title=null { focus-column-right-or-first; }
+    Super+Alt+Up hotkey-overlay-title=null { focus-window-or-workspace-up; }
+    Super+Alt+Down hotkey-overlay-title=null { focus-window-or-workspace-down; }
+    Super+Alt+H hotkey-overlay-title=null { focus-column-left-or-last; }
+    Super+Alt+L hotkey-overlay-title=null { focus-column-right-or-first; }
+    Super+Alt+K hotkey-overlay-title=null { focus-window-or-workspace-up; }
+    Super+Alt+J hotkey-overlay-title=null { focus-window-or-workspace-down; }
 
-    // ================= 首/末列 =================
-    Super+Home hotkey-overlay-title="聚焦首列" { focus-column-first; }
-    Super+End hotkey-overlay-title="聚焦末列" { focus-column-last; }
-    Super+Ctrl+Home hotkey-overlay-title="列移到最前" { move-column-to-first; }
-    Super+Ctrl+End hotkey-overlay-title="列移到最后" { move-column-to-last; }
+    // ================= 首/末列（面板隐藏） =================
+    Super+Home hotkey-overlay-title=null { focus-column-first; }
+    Super+End hotkey-overlay-title=null { focus-column-last; }
+    Super+Ctrl+Home hotkey-overlay-title=null { move-column-to-first; }
+    Super+Ctrl+End hotkey-overlay-title=null { move-column-to-last; }
 
-    // ================= 多显示器焦点 (方向键 + HJKL) =================
-    Super+Shift+Left hotkey-overlay-title="焦点左显示器" { focus-monitor-left; }
-    Super+Shift+Right hotkey-overlay-title="焦点右显示器" { focus-monitor-right; }
-    Super+Shift+Up hotkey-overlay-title="焦点上显示器" { focus-monitor-up; }
-    Super+Shift+Down hotkey-overlay-title="焦点下显示器" { focus-monitor-down; }
-    Super+Shift+H hotkey-overlay-title="焦点左显示器" { focus-monitor-left; }
-    Super+Shift+L hotkey-overlay-title="焦点右显示器" { focus-monitor-right; }
-    Super+Shift+K hotkey-overlay-title="焦点上显示器" { focus-monitor-up; }
-    Super+Shift+J hotkey-overlay-title="焦点下显示器" { focus-monitor-down; }
+    // ================= 多显示器焦点（面板隐藏） =================
+    Super+Shift+Left hotkey-overlay-title=null { focus-monitor-left; }
+    Super+Shift+Right hotkey-overlay-title=null { focus-monitor-right; }
+    Super+Shift+Up hotkey-overlay-title=null { focus-monitor-up; }
+    Super+Shift+Down hotkey-overlay-title=null { focus-monitor-down; }
+    Super+Shift+H hotkey-overlay-title=null { focus-monitor-left; }
+    Super+Shift+L hotkey-overlay-title=null { focus-monitor-right; }
+    Super+Shift+K hotkey-overlay-title=null { focus-monitor-up; }
+    Super+Shift+J hotkey-overlay-title=null { focus-monitor-down; }
 
-    // ================= 列移到显示器 (方向键 + HJKL) =================
-    Super+Ctrl+Shift+Left hotkey-overlay-title="列移到左显示器" { move-column-to-monitor-left; }
-    Super+Ctrl+Shift+Right hotkey-overlay-title="列移到右显示器" { move-column-to-monitor-right; }
-    Super+Ctrl+Shift+Up hotkey-overlay-title="列移到上显示器" { move-column-to-monitor-up; }
-    Super+Ctrl+Shift+Down hotkey-overlay-title="列移到下显示器" { move-column-to-monitor-down; }
-    Super+Ctrl+Shift+H hotkey-overlay-title="列移到左显示器" { move-column-to-monitor-left; }
-    Super+Ctrl+Shift+L hotkey-overlay-title="列移到右显示器" { move-column-to-monitor-right; }
-    Super+Ctrl+Shift+K hotkey-overlay-title="列移到上显示器" { move-column-to-monitor-up; }
-    Super+Ctrl+Shift+J hotkey-overlay-title="列移到下显示器" { move-column-to-monitor-down; }
+    // ================= 列移到显示器（面板隐藏） =================
+    Super+Ctrl+Shift+Left hotkey-overlay-title=null { move-column-to-monitor-left; }
+    Super+Ctrl+Shift+Right hotkey-overlay-title=null { move-column-to-monitor-right; }
+    Super+Ctrl+Shift+Up hotkey-overlay-title=null { move-column-to-monitor-up; }
+    Super+Ctrl+Shift+Down hotkey-overlay-title=null { move-column-to-monitor-down; }
+    Super+Ctrl+Shift+H hotkey-overlay-title=null { move-column-to-monitor-left; }
+    Super+Ctrl+Shift+L hotkey-overlay-title=null { move-column-to-monitor-right; }
+    Super+Ctrl+Shift+K hotkey-overlay-title=null { move-column-to-monitor-up; }
+    Super+Ctrl+Shift+J hotkey-overlay-title=null { move-column-to-monitor-down; }
 
-    // ================= 工作区移到显示器 (进阶) =================
-    Super+Alt+Shift+Left hotkey-overlay-title="工作区移到左显示器" { move-workspace-to-monitor-left; }
-    Super+Alt+Shift+Right hotkey-overlay-title="工作区移到右显示器" { move-workspace-to-monitor-right; }
-    Super+Alt+Shift+Up hotkey-overlay-title="工作区移到上显示器" { move-workspace-to-monitor-up; }
-    Super+Alt+Shift+Down hotkey-overlay-title="工作区移到下显示器" { move-workspace-to-monitor-down; }
-    Super+Alt+Shift+H hotkey-overlay-title="工作区移到左显示器" { move-workspace-to-monitor-left; }
-    Super+Alt+Shift+L hotkey-overlay-title="工作区移到右显示器" { move-workspace-to-monitor-right; }
-    Super+Alt+Shift+K hotkey-overlay-title="工作区移到上显示器" { move-workspace-to-monitor-up; }
-    Super+Alt+Shift+J hotkey-overlay-title="工作区移到下显示器" { move-workspace-to-monitor-down; }
+    // ================= 工作区移到显示器（面板隐藏） =================
+    Super+Alt+Shift+Left hotkey-overlay-title=null { move-workspace-to-monitor-left; }
+    Super+Alt+Shift+Right hotkey-overlay-title=null { move-workspace-to-monitor-right; }
+    Super+Alt+Shift+Up hotkey-overlay-title=null { move-workspace-to-monitor-up; }
+    Super+Alt+Shift+Down hotkey-overlay-title=null { move-workspace-to-monitor-down; }
+    Super+Alt+Shift+H hotkey-overlay-title=null { move-workspace-to-monitor-left; }
+    Super+Alt+Shift+L hotkey-overlay-title=null { move-workspace-to-monitor-right; }
+    Super+Alt+Shift+K hotkey-overlay-title=null { move-workspace-to-monitor-up; }
+    Super+Alt+Shift+J hotkey-overlay-title=null { move-workspace-to-monitor-down; }
 
-    // ================= 工作区 =================
-    Super+1 hotkey-overlay-title="切换到工作区 1" { focus-workspace 1; }
-    Super+2 hotkey-overlay-title="切换到工作区 2" { focus-workspace 2; }
-    Super+3 hotkey-overlay-title="切换到工作区 3" { focus-workspace 3; }
-    Super+4 hotkey-overlay-title="切换到工作区 4" { focus-workspace 4; }
-    Super+5 hotkey-overlay-title="切换到工作区 5" { focus-workspace 5; }
-    Super+6 hotkey-overlay-title="切换到工作区 6" { focus-workspace 6; }
-    Super+7 hotkey-overlay-title="切换到工作区 7" { focus-workspace 7; }
-    Super+8 hotkey-overlay-title="切换到工作区 8" { focus-workspace 8; }
-    Super+9 hotkey-overlay-title="切换到工作区 9" { focus-workspace 9; }
+    // ================= 工作区（面板仅显示总览） =================
+    Super+1 hotkey-overlay-title=null { focus-workspace 1; }
+    Super+2 hotkey-overlay-title=null { focus-workspace 2; }
+    Super+3 hotkey-overlay-title=null { focus-workspace 3; }
+    Super+4 hotkey-overlay-title=null { focus-workspace 4; }
+    Super+5 hotkey-overlay-title=null { focus-workspace 5; }
+    Super+6 hotkey-overlay-title=null { focus-workspace 6; }
+    Super+7 hotkey-overlay-title=null { focus-workspace 7; }
+    Super+8 hotkey-overlay-title=null { focus-workspace 8; }
+    Super+9 hotkey-overlay-title=null { focus-workspace 9; }
 
-    Super+Ctrl+1 hotkey-overlay-title="列移到工作区 1" { move-column-to-workspace 1; }
-    Super+Ctrl+2 hotkey-overlay-title="列移到工作区 2" { move-column-to-workspace 2; }
-    Super+Ctrl+3 hotkey-overlay-title="列移到工作区 3" { move-column-to-workspace 3; }
-    Super+Ctrl+4 hotkey-overlay-title="列移到工作区 4" { move-column-to-workspace 4; }
-    Super+Ctrl+5 hotkey-overlay-title="列移到工作区 5" { move-column-to-workspace 5; }
-    Super+Ctrl+6 hotkey-overlay-title="列移到工作区 6" { move-column-to-workspace 6; }
-    Super+Ctrl+7 hotkey-overlay-title="列移到工作区 7" { move-column-to-workspace 7; }
-    Super+Ctrl+8 hotkey-overlay-title="列移到工作区 8" { move-column-to-workspace 8; }
-    Super+Ctrl+9 hotkey-overlay-title="列移到工作区 9" { move-column-to-workspace 9; }
+    Super+Ctrl+1 hotkey-overlay-title=null { move-column-to-workspace 1; }
+    Super+Ctrl+2 hotkey-overlay-title=null { move-column-to-workspace 2; }
+    Super+Ctrl+3 hotkey-overlay-title=null { move-column-to-workspace 3; }
+    Super+Ctrl+4 hotkey-overlay-title=null { move-column-to-workspace 4; }
+    Super+Ctrl+5 hotkey-overlay-title=null { move-column-to-workspace 5; }
+    Super+Ctrl+6 hotkey-overlay-title=null { move-column-to-workspace 6; }
+    Super+Ctrl+7 hotkey-overlay-title=null { move-column-to-workspace 7; }
+    Super+Ctrl+8 hotkey-overlay-title=null { move-column-to-workspace 8; }
+    Super+Ctrl+9 hotkey-overlay-title=null { move-column-to-workspace 9; }
 
-    Super+Page_Down hotkey-overlay-title="下个工作区" { focus-workspace-down; }
-    Super+Page_Up hotkey-overlay-title="上个工作区" { focus-workspace-up; }
-    // 2026-09-23：工作区上下切换改用 Vim 风格 J/K（J=下、K=上），
-    //             原 Super+U / Super+I 已移除。
-    Super+J hotkey-overlay-title="下个工作区" { focus-workspace-down; }
-    Super+K hotkey-overlay-title="上个工作区" { focus-workspace-up; }
+    Super+Page_Down hotkey-overlay-title=null { focus-workspace-down; }
+    Super+Page_Up hotkey-overlay-title=null { focus-workspace-up; }
+    Super+J hotkey-overlay-title=null { focus-workspace-down; }
+    Super+K hotkey-overlay-title=null { focus-workspace-up; }
     Super+Tab hotkey-overlay-title="总览(Overview)" { toggle-overview; }
-    Super+Backspace hotkey-overlay-title="回到上个工作区" { focus-workspace-previous; }
-    Super+Ctrl+Backspace hotkey-overlay-title="回到上个焦点窗口" { focus-window-previous; }
+    Super+Backspace hotkey-overlay-title=null { focus-workspace-previous; }
+    Super+Ctrl+Backspace hotkey-overlay-title=null { focus-window-previous; }
 
-    Super+Ctrl+Page_Down hotkey-overlay-title="列移到下个工作区" { move-column-to-workspace-down; }
-    Super+Ctrl+Page_Up hotkey-overlay-title="列移到上个工作区" { move-column-to-workspace-up; }
-    Super+Ctrl+U hotkey-overlay-title="列移到下个工作区" { move-column-to-workspace-down; }
-    Super+Ctrl+I hotkey-overlay-title="列移到上个工作区" { move-column-to-workspace-up; }
+    Super+Ctrl+Page_Down hotkey-overlay-title=null { move-column-to-workspace-down; }
+    Super+Ctrl+Page_Up hotkey-overlay-title=null { move-column-to-workspace-up; }
+    Super+Ctrl+U hotkey-overlay-title=null { move-column-to-workspace-down; }
+    Super+Ctrl+I hotkey-overlay-title=null { move-column-to-workspace-up; }
 
-    Super+Shift+Page_Down hotkey-overlay-title="工作区下移" { move-workspace-down; }
-    Super+Shift+Page_Up hotkey-overlay-title="工作区上移" { move-workspace-up; }
+    Super+Shift+Page_Down hotkey-overlay-title=null { move-workspace-down; }
+    Super+Shift+Page_Up hotkey-overlay-title=null { move-workspace-up; }
 
-    // ================= 窗口分组/交换 =================
-    Super+BracketLeft hotkey-overlay-title="吸收/弹出左侧窗口" { consume-or-expel-window-left; }
-    Super+BracketRight hotkey-overlay-title="吸收/弹出右侧窗口" { consume-or-expel-window-right; }
-    Super+Comma hotkey-overlay-title="吸收到列" { consume-window-into-column; }
-    Super+Period hotkey-overlay-title="从列弹出" { expel-window-from-column; }
-    Super+Ctrl+Comma hotkey-overlay-title="与左窗口交换" { swap-window-left; }
-    Super+Ctrl+Period hotkey-overlay-title="与右窗口交换" { swap-window-right; }
+    // ================= 窗口分组/交换（面板隐藏） =================
+    Super+BracketLeft hotkey-overlay-title=null { consume-or-expel-window-left; }
+    Super+BracketRight hotkey-overlay-title=null { consume-or-expel-window-right; }
+    Super+Comma hotkey-overlay-title=null { consume-window-into-column; }
+    Super+Period hotkey-overlay-title=null { expel-window-from-column; }
+    Super+Ctrl+Comma hotkey-overlay-title=null { swap-window-left; }
+    Super+Ctrl+Period hotkey-overlay-title=null { swap-window-right; }
 
-    // ================= 列/窗口尺寸 =================
+    // ================= 列/窗口尺寸（面板仅显示核心项） =================
     Super+R hotkey-overlay-title="切换列宽" { switch-preset-column-width; }
-    Super+Shift+R hotkey-overlay-title="反向切换列宽" { switch-preset-column-width-back; }
+    Super+Shift+R hotkey-overlay-title=null { switch-preset-column-width-back; }
     Super+Ctrl+E hotkey-overlay-title="切换窗口高度" { switch-preset-window-height; }
-    Super+Ctrl+Shift+E hotkey-overlay-title="反向切换窗口高度" { switch-preset-window-height-back; }
+    Super+Ctrl+Shift+E hotkey-overlay-title=null { switch-preset-window-height-back; }
     Super+Ctrl+R hotkey-overlay-title="重置窗口高度" { reset-window-height; }
-    Super+Minus hotkey-overlay-title="列宽 -10%" { set-column-width "-10%"; }
-    Super+Equal hotkey-overlay-title="列宽 +10%" { set-column-width "+10%"; }
-    Super+Shift+Minus hotkey-overlay-title="窗口高度 -10%" { set-window-height "-10%"; }
-    Super+Shift+Equal hotkey-overlay-title="窗口高度 +10%" { set-window-height "+10%"; }
+    Super+Minus hotkey-overlay-title=null { set-column-width "-10%"; }
+    Super+Equal hotkey-overlay-title=null { set-column-width "+10%"; }
+    Super+Shift+Minus hotkey-overlay-title=null { set-window-height "-10%"; }
+    Super+Shift+Equal hotkey-overlay-title=null { set-window-height "+10%"; }
 
-    // ================= 鼠标滚轮 =================
-    Super+WheelScrollDown cooldown-ms=150 hotkey-overlay-title="下个工作区" { focus-workspace-down; }
-    Super+WheelScrollUp cooldown-ms=150 hotkey-overlay-title="上个工作区" { focus-workspace-up; }
-    Super+Ctrl+WheelScrollDown cooldown-ms=150 hotkey-overlay-title="列移到下个工作区" { move-column-to-workspace-down; }
-    Super+Ctrl+WheelScrollUp cooldown-ms=150 hotkey-overlay-title="列移到上个工作区" { move-column-to-workspace-up; }
-    Super+WheelScrollRight hotkey-overlay-title="焦点右移" { focus-column-right; }
-    Super+WheelScrollLeft hotkey-overlay-title="焦点左移" { focus-column-left; }
-    Super+Ctrl+WheelScrollRight hotkey-overlay-title="列右移" { move-column-right; }
-    Super+Ctrl+WheelScrollLeft hotkey-overlay-title="列左移" { move-column-left; }
+    // ================= 鼠标滚轮（面板隐藏） =================
+    Super+WheelScrollDown cooldown-ms=150 hotkey-overlay-title=null { focus-workspace-down; }
+    Super+WheelScrollUp cooldown-ms=150 hotkey-overlay-title=null { focus-workspace-up; }
+    Super+Ctrl+WheelScrollDown cooldown-ms=150 hotkey-overlay-title=null { move-column-to-workspace-down; }
+    Super+Ctrl+WheelScrollUp cooldown-ms=150 hotkey-overlay-title=null { move-column-to-workspace-up; }
+    Super+WheelScrollRight hotkey-overlay-title=null { focus-column-right; }
+    Super+WheelScrollLeft hotkey-overlay-title=null { focus-column-left; }
+    Super+Ctrl+WheelScrollRight hotkey-overlay-title=null { move-column-right; }
+    Super+Ctrl+WheelScrollLeft hotkey-overlay-title=null { move-column-left; }
 
     // ================= 截图 =================
-    // 2026-09-19: 截图只保留一个键, 且从 Super+PrtSc 改为裸 Print -> mark-shot。
-    // 已移除: Super+Print / Ctrl+Print(整屏) / Alt+Print(窗口) / Shift+Print(钉图) / Super+Shift+Print(窗口标注)。
-    // 说明: screenshot.sh 与 markshot-window 脚本都还在 ~/.local/bin, 想加回来照抄备份里的行即可
-    // 备份: config.kdl.bak-20260919-screenshot-keys (收敛前) / config.kdl.bak-20260919-print-key (本次改动前)
-    //
-    // mark-shot 主力截图: 选区后可直接画箭头/方框/马赛克, Ctrl+P 钉图
-    // Ctrl+C 只写 Wayland 剪贴板; 要粘到 XWayland 应用(VS Code/Codex)请用工具栏
-    // 的 Extensions →"复制到双剪贴板并存盘"
     Print hotkey-overlay-title="截图标注 (mark-shot)" { spawn "mark-shot"; }
 
+    // ================= 键盘控制鼠标 (wl-kbptr) =================
+    // Super+G：截屏识别屏幕上可点击的元素 → 打字选中 → 左键点击。
+    //   分区标签是字母；Backspace 退回上一步；Esc 取消。
+    // Super+Shift+G：全屏网格 + 二分逼近，只移动指针不点击（纯挪鼠标用这个）。
+    //   注意 bisect/split 模式下 g / h / b 会分别触发左/右/中键，属内置行为。
+    // Super+Alt+G：同上识别流程，但改为右键点击（开右键菜单）。
+    // 提示：niri 开了 cursor hide-when-typing，wl-kbptr 结束后指针可能短暂隐藏，动一下鼠标即恢复。
+    Super+G hotkey-overlay-title="键盘点击屏幕元素 (wl-kbptr)" { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
+    Super+Shift+G hotkey-overlay-title="键盘移动鼠标指针" { spawn "wl-kbptr" "-o" "modes=tile,bisect" "-o" "mode_click.button=none"; }
+    Super+Alt+G hotkey-overlay-title="键盘右键点击元素" { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect" "-o" "mode_click.button=right"; }
+
     // ================= 音量 =================
-    // allow-when-locked=true: 锁屏状态下也能调音量（之前锁屏后按音量键没反应）
-    XF86AudioRaiseVolume allow-when-locked=true hotkey-overlay-title="音量增加" { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
-    XF86AudioLowerVolume allow-when-locked=true hotkey-overlay-title="音量减少" { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
-    XF86AudioMute allow-when-locked=true hotkey-overlay-title="静音切换" { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+    // allow-when-locked=true：锁屏状态下也能调节
+    XF86AudioRaiseVolume allow-when-locked=true hotkey-overlay-title=null { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
+    XF86AudioLowerVolume allow-when-locked=true hotkey-overlay-title=null { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+    XF86AudioMute allow-when-locked=true hotkey-overlay-title=null { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
     Super+F3 hotkey-overlay-title="音量增加" { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+; notify-send '音量' \"$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"%.0f%%\", $2*100}')\""; }
     Super+F2 hotkey-overlay-title="音量减少" { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-; notify-send '音量' \"$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf \"%.0f%%\", $2*100}')\""; }
 
     // ================= 亮度 =================
-    XF86MonBrightnessUp allow-when-locked=true hotkey-overlay-title="亮度增加" { spawn "brightnessctl" "set" "+5%"; }
-    XF86MonBrightnessDown allow-when-locked=true hotkey-overlay-title="亮度减少" { spawn "brightnessctl" "set" "5%-"; }
+    XF86MonBrightnessUp allow-when-locked=true hotkey-overlay-title=null { spawn "brightnessctl" "set" "+5%"; }
+    XF86MonBrightnessDown allow-when-locked=true hotkey-overlay-title=null { spawn "brightnessctl" "set" "5%-"; }
     Super+F6 hotkey-overlay-title="亮度增加" { spawn-sh "sudo -n brightnessctl -d nvidia_0 set +5%; notify-send '亮度' \"$(brightnessctl -d nvidia_0 get)%\""; }
     Super+F5 hotkey-overlay-title="亮度减少" { spawn-sh "sudo -n brightnessctl -d nvidia_0 set 5%-; notify-send '亮度' \"$(brightnessctl -d nvidia_0 get)%\""; }
 
     // ================= 媒体控制 =================
-    XF86AudioPlay allow-when-locked=true hotkey-overlay-title="播放/暂停" { spawn "playerctl" "play-pause"; }
-    XF86AudioNext allow-when-locked=true hotkey-overlay-title="下一曲" { spawn "playerctl" "next"; }
-    XF86AudioPrev allow-when-locked=true hotkey-overlay-title="上一曲" { spawn "playerctl" "previous"; }
+    // playerctl 未安装，媒体控制走 Noctalia
+    XF86AudioPlay allow-when-locked=true hotkey-overlay-title=null { spawn "noctalia" "msg" "media" "toggle"; }
+    XF86AudioNext allow-when-locked=true hotkey-overlay-title=null { spawn "noctalia" "msg" "media" "next"; }
+    XF86AudioPrev allow-when-locked=true hotkey-overlay-title=null { spawn "noctalia" "msg" "media" "previous"; }
 
-    // 媒体控制的键盘组合键（2026-09-25 新增）
-    // 来由：外接键盘 Microdia 2.4G Dongle 不支持媒体键；
-    //   笔记本内置键盘的 Fn+← / Fn+→ 在固件层被翻译成**普通方向键**
-    //   （实测发出 LEFT=105 / RIGHT=106，与方向键无法区分），
-    //   所以「把 Fn+←/→ 绑成切歌」在软件层做不到 —— 绑裸 LEFT/RIGHT 会废掉方向键。
-    //   改用下面这组外接键盘上顺手的空闲组合键（Z 在左=上一曲，X 在右=下一曲）。
-    // 备份：config.kdl.bak-20260925-media-keys
-    Super+Z hotkey-overlay-title="上一曲" { spawn "playerctl" "previous"; }
-    Super+X hotkey-overlay-title="下一曲" { spawn "playerctl" "next"; }
-    Super+Shift+X hotkey-overlay-title="播放/暂停" { spawn "playerctl" "play-pause"; }
+    // 外接键盘没有媒体键，用 Z/X 代替
+    Super+Z hotkey-overlay-title="上一曲" { spawn "noctalia" "msg" "media" "previous"; }
+    Super+X hotkey-overlay-title="下一曲" { spawn "noctalia" "msg" "media" "next"; }
+    Super+Shift+X hotkey-overlay-title="播放/暂停" { spawn "noctalia" "msg" "media" "toggle"; }
 
-    // ================= 屏幕电源 (2026-09-13 新增) =================
-    // 立刻熄屏（DPMS off）。按任意键/动鼠标会亮回来。
+    // ================= 屏幕电源 =================
+    // 立刻熄屏，按任意键或移动鼠标恢复
     Super+Shift+O hotkey-overlay-title="立刻熄屏" { power-off-monitors; }
-    // 临时禁用/恢复所有快捷键（玩游戏、远程桌面时不让 niri 抢键）
+    // 临时禁用/恢复所有快捷键（游戏、远程桌面时使用）
     Super+Escape allow-inhibiting=false hotkey-overlay-title="暂停快捷键" { toggle-keyboard-shortcuts-inhibit; }
 
     // ================= 壁纸 =================
     Super+F12 hotkey-overlay-title="下一张壁纸" { spawn "/home/sky/.local/bin/wallpaper-rotate.sh" "next"; }
     Super+F11 hotkey-overlay-title="上一张壁纸" { spawn "/home/sky/.local/bin/wallpaper-rotate.sh" "prev"; }
+    // 壁纸默认只在充电时显示
+    Super+F10 hotkey-overlay-title="壁纸: 电池上也显示" { spawn "/home/sky/.local/bin/wallpaper-rotate.sh" "ignore"; }
+    Super+Shift+F10 hotkey-overlay-title="壁纸: 只充电时显示" { spawn "/home/sky/.local/bin/wallpaper-rotate.sh" "respect"; }
 
     // ================= 剪贴板/翻译 =================
-    Super+V hotkey-overlay-title="剪贴板历史" { spawn "sh" "-c" "/home/sky/bin/toggle-copyclip.sh"; }
-    // 2026-09-24: 剪贴板文本翻译这一键不用了, 注释掉。Super+Shift+E 现已空出。
-    //   脚本 ~/bin/translate.py 仍然保留在磁盘上, 想手动翻译直接跑:
-    //       python3 ~/bin/translate.py
-    //   想恢复快捷键, 把下面这一行解注释即可(备份 config.kdl.bak-20260924-comment-translate-key)。
-    // Super+Shift+E hotkey-overlay-title="翻译选中文本" { spawn "python3" "/home/sky/bin/translate.py"; }
-
-    // 截图翻译: 框选一块屏幕区域 → OCR 识别 → 翻成中文 → 用 mark-shot 贴图窗口
-    // 把译文**原地盖在原文上**。暂不落盘, Esc 关掉即可。
-    // 脚本: /home/sky/.local/bin/markshot-translate-region (Esc 取消选区, 静默退出)
-    //
-    // 为什么键不绑在 mark-shot 里: mark-shot 的 shortcuts 段只有
-    // tools / actions / startup 三类, **完全没有 OCR 或翻译项**(查过它源码
-    // src/app_config_defaults.cpp), 译文只能从贴图窗口右键菜单触发。
-    // 所以这一键只能挂在 niri 侧: slurp 选区 → grim 截图 → mark-shot --pin-image。
-    //
-    // 键位: Super+A (2026-09-24 先定为 Super+Alt+E, 用户当天改成 Super+A)。
-    // 刻意避开 Print 系列 —— 2026-09-19 已把截图收敛成裸 Print 一个键,
-    // 不想再往那一家族里加键。想换键直接改这一行即可。
-    // 备份: config.kdl.bak-20260924-ocr-translate-key
-    Super+A hotkey-overlay-title="截图翻译 (框选 OCR)" { spawn "/home/sky/.local/bin/markshot-translate-region"; }
+    Super+V hotkey-overlay-title="剪贴板历史 (Noctalia)" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
+    Super+D hotkey-overlay-title="翻译选中文本" { spawn "python3" "/home/sky/bin/translate.py"; }
 
     // ================= 锁屏/电源/退出 =================
-    // 2026-09-24 锁屏从 swaylock 换成 hyprlock:
-    //   原命令 swaylock -c 000000 纯黑一片、没配指示器颜色, 看不出密码输对没有;
-    //   hyprlock 有 验证中/密码错误(带重试次数)/大写锁定 三种状态反馈 + 桌面模糊背景。
-    //   配置: ~/.config/hypr/hyprlock.conf (Catppuccin Mocha)
-    //   卡住时强制解锁: pkill -USR1 hyprlock
-    //   想换回纯黑: spawn "swaylock" "-c" "000000"
-    // 备份: config.kdl.bak-20260924-lock-hyprlock
-    //
-    // 2026-09-24 追加「锁屏后立即熄屏」(用户要求: 按键即黑 → 按任意键亮屏 → 输密码):
-    //   刻意不在这里写 `spawn "hyprlock"; power-off-monitors;` 两行 —— spawn 是异步的,
-    //   熄屏会抢在 hyprlock 接管 session lock 之前, 按键唤醒的一瞬间可能瞥见未锁的桌面。
-    //   改用脚本 lock-and-off 卡住顺序(等 hyprlock 起来再熄屏, 解锁后自动退出)。
-    //   备份: config.kdl.bak-20260924-lock-and-off
-    Ctrl+Alt+L hotkey-overlay-title="锁屏并熄屏" { spawn "/home/sky/.local/bin/lock-and-off"; }
+    // 锁屏并熄屏（Noctalia 负责锁屏，如需要可取消注释）
+    // Ctrl+Alt+L hotkey-overlay-title="锁屏并熄屏" { spawn-sh "noctalia msg session lock; sleep 1; noctalia msg dpms-off"; }
     Ctrl+Alt+Delete hotkey-overlay-title="退出 niri" { quit; }
-    Super+Shift+P hotkey-overlay-title="关机" { spawn "niri-power" "poweroff"; }
-    Super+Shift+Q hotkey-overlay-title="重启" { spawn "niri-power" "reboot"; }
-    Super+Shift+S hotkey-overlay-title="挂起" { spawn "niri-power" "suspend"; }
+    Super+Shift+P hotkey-overlay-title="关机" { spawn "noctalia" "msg" "session" "shutdown"; }
+    Super+Shift+Q hotkey-overlay-title="重启" { spawn "noctalia" "msg" "session" "reboot"; }
+    Super+Shift+S hotkey-overlay-title="挂起" { spawn "noctalia" "msg" "session" "suspend"; }
 }
+
+
+// ============================================================
+// 层规则
+// ============================================================
+
+// 把动态壁纸放进 backdrop 层，避免总览里被复制到每个工作区。
+// 必须配合 layout 中的 background-color "transparent" 才能看见壁纸。
+layer-rule {
+    match namespace="^linux-wallpaperengine$"
+    place-within-backdrop true
+}
+
 
 // ============================================================
 // 调试
 // ============================================================
-//
-// 除非是多显卡配置有特殊需求, 否则不要强制指定 DRM 渲染设备。
-// 保持本段为空可避免硬编码 /dev/dri/renderD128。
-//
-// 如果以后电脑在"睡眠/唤醒"后出现黑屏/不显示问题,
-// 可以启用下面这段(注释取消即可):
-//
+
+// 睡眠/唤醒后出现黑屏时，可启用：
 // debug {
 //     force-disable-connectors-on-resume
 // }
 
 
 // ============================================================
-// 输出设备 (显示器)
+// 输出设备
 // ============================================================
 
 output "eDP-1" {
-    mode "1920x1080@144.002"
+    // 刷新率必须与 EDID 完全一致（144.003），否则会回退到 60Hz
+    mode "1920x1080@144.003"
 }

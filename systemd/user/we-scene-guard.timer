@@ -1,0 +1,11 @@
+[Unit]
+Description=每 30 分钟巡检一次壁纸资产
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Persistent=true
+Unit=we-scene-guard.service
+
+[Install]
+WantedBy=timers.target

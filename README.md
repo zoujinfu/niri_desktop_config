@@ -1,10 +1,10 @@
 # niri 桌面配置
 
-一套基于 **niri** 平铺式 Wayland 合成器的 Ubuntu 桌面配置：全中文注释，含 Waybar 状态栏、mako 通知、hyprlock 锁屏、截图翻译（OCR）、剪贴板历史、音量/亮度/壁纸快捷键与电源管理。
+一套基于 **niri** 平铺式 Wayland 合成器的 Arch Linux 桌面配置：全中文注释，noctalia 承担状态栏 / 通知 / 锁屏 / 剪贴板 / OSD，Vicinae 做启动器，配合 Wallpaper Engine 动态壁纸、截图标注、键盘控鼠标、选中文本翻译与番茄钟。
 
-> 环境：Ubuntu 24.04 / niri 26.04（源码编译）/ Wayland
+> 环境：Arch Linux / niri 26.04 / Wayland
 > 硬件：Intel i7-13650HX + NVIDIA RTX 4060（nvidia 驱动）
-> 更新时间：2026-09-25
+> 更新时间：2026-11-23
 
 ## 目录结构
 
@@ -12,89 +12,86 @@
 niri_desktop_config/
 ├── niri/
 │   └── config.kdl                    # niri 主配置（中文注释，完整快捷键绑定）
-├── waybar/
-│   ├── config.jsonc                  # 状态栏模块布局（niri IPC + custom 模块）
-│   ├── style.css                     # 状态栏样式（Catppuccin Mocha）
-│   └── scripts/
-│       ├── niri-workspaces.py        # 工作区胶囊
-│       ├── niri-window.py            # 当前窗口标题
-│       └── niri-event-daemon.py      # 事件流守护（已停用，改用 IPC 轮询，保留备用）
-├── mako/
-│   └── config                         # 通知守护配置（历史 + 按应用分组）
-├── hypr/
-│   └── hyprlock.conf                  # 锁屏界面（Catppuccin Mocha，走 session-lock 协议）
-└── bin/
-    ├── niri-power                    # 电源管理（弹确认框关机/重启/挂起）
-    ├── nirimod                       # 图形化 niri 配置面板启动脚本
-    ├── lock-and-off                  # 锁屏 + 立即熄屏（等 hyprlock 接管后再熄）
-    ├── markshot-translate-region     # 框选截图 → OCR → 翻译 → 译文原地覆盖
-    ├── wallpaper-rotate.sh           # Wallpaper Engine 动态壁纸切换
-    └── home-bin/
-        └── toggle-copyclip.sh        # 唤起 CopyClip 剪贴板管理器（本文件放 ~/bin/）
+├── noctalia/
+│   └── config.toml                   # 桌面外壳：状态栏 / 通知 / 锁屏 / 剪贴板 / OSD / 番茄钟
+├── vicinae/
+│   └── settings.json                 # 启动器配置（Catppuccin Mocha 主题 + snippets provider）
+├── bin/
+│   ├── wallpaper-rotate.sh           # Wallpaper Engine 壁纸切换 + 电源门控 + 守护
+│   ├── wallpaper-power-daemon.sh     # 监听 upower 事件，插拔电源时启停壁纸
+│   ├── we-scene-guard.sh             # 巡检 Wallpaper Engine 资产，被 Steam 覆盖回 4K 时降码率
+│   └── translate.py                  # 翻译选中文本（Super+D），带 GTK 窗口
+└── systemd/
+    └── user/
+        ├── wallpaper-rotate.service  # 轮换壁纸（配合 .timer，30 分钟一次）
+        ├── wallpaper-rotate.timer
+        ├── wallpaper-power.service   # 电源门控守护（常驻）
+        ├── wallpaper-watchdog.service # 壁纸进程存活检查（配合 .timer，2 分钟一次）
+        ├── wallpaper-watchdog.timer
+        ├── we-scene-guard.service    # 壁纸资产巡检（配合 .timer，30 分钟一次）
+        └── we-scene-guard.timer
 ```
 
-> `bin/` 下的脚本装到 `~/.local/bin/`，`bin/home-bin/` 下的装到 `~/bin/`。
+> 脚本装到 `~/.local/bin/`，systemd unit 装到 `~/.config/systemd/user/`。
 
 ## 依赖
 
 ```bash
-# 基础
-sudo apt install niri waybar mako slurp grim wl-clipboard \
-  brightnessctl playerctl zenity python3
+# 基础（Arch 官方源 + AUR）
+sudo pacman -S niri kitty nautilus wl-clipboard brightnessctl \
+  pipewire wireplumber upower python-gobject gtk3
 
-# 锁屏（hyprlock，见下方说明）
-sudo apt install hyprlock
+# 桌面外壳 / 启动器（AUR）
+yay -S noctalia-shell vicinae-bin
 
-# 可选：截图标注 / OCR / 动态壁纸 / 剪贴板管理器
-#   mark-shot             截图标注工具（选区后画箭头/方框/马赛克，配 mark-shot-ocr 做 OCR）
-#   tesseract-ocr         截图翻译的 OCR 后端（需含 chi_sim 简体中文语言包）
-#   linux-wallpaperengine Wallpaper Engine 动态壁纸
-#   CopyClip              D-Bus 名 dev.walkercito.CopyClip，剪贴板历史
-#   Vicinae               Raycast 风格启动器（Alt+Space）
+# 截图 / 键盘控鼠标
+#   mark-shot        截图标注（选区后画箭头/方框/马赛克，Ctrl+P 钉图）
+#   wl-kbptr         用键盘点击屏幕元素
+
+# 动态壁纸
+#   linux-wallpaperengine   Wallpaper Engine 壁纸渲染（AUR）
+#   （壁纸资产需通过 Steam 订阅 Workshop 项目）
 ```
 
-图标字体需要 **Nerd Font**（如 JetBrainsMono Nerd Font），否则状态栏图标显示为空。
+字体需要 **Nerd Font**（如 JetBrainsMono Nerd Font），否则 noctalia 图标显示为空。
 
 ## 安装
 
 ```bash
-# niri
+# niri 主配置
 cp niri/config.kdl ~/.config/niri/config.kdl
 
-# waybar
-mkdir -p ~/.config/waybar/scripts
-cp waybar/config.jsonc waybar/style.css ~/.config/waybar/
-cp waybar/scripts/*.py ~/.config/waybar/scripts/
-chmod +x ~/.config/waybar/scripts/*.py
+# 桌面外壳
+mkdir -p ~/.config/noctalia && cp noctalia/config.toml ~/.config/noctalia/
 
-# mako
-mkdir -p ~/.config/mako && cp mako/config ~/.config/mako/config
+# 启动器
+mkdir -p ~/.config/vicinae && cp vicinae/settings.json ~/.config/vicinae/
 
-# hyprlock（锁屏界面；PAM 需要 /etc/pam.d/hyprlock，多数发行版的 hyprlock 包会自带）
-mkdir -p ~/.config/hypr && cp hypr/hyprlock.conf ~/.config/hypr/hyprlock.conf
+# 脚本
+mkdir -p ~/.local/bin
+cp bin/*.sh bin/translate.py ~/.local/bin/
+chmod +x ~/.local/bin/wallpaper-rotate.sh ~/.local/bin/wallpaper-power-daemon.sh \
+         ~/.local/bin/we-scene-guard.sh ~/.local/bin/translate.py
 
-# 脚本（bin/ 下的装到 ~/.local/bin/，home-bin/ 下的装到 ~/bin/）
-mkdir -p ~/.local/bin ~/bin
-cp bin/niri-power bin/nirimod bin/lock-and-off bin/markshot-translate-region ~/.local/bin/
-cp bin/wallpaper-rotate.sh ~/.local/bin/
-cp bin/home-bin/toggle-copyclip.sh ~/bin/
-chmod +x ~/.local/bin/{niri-power,nirimod,lock-and-off,markshot-translate-region,wallpaper-rotate.sh} ~/bin/toggle-copyclip.sh
+# systemd user units
+mkdir -p ~/.config/systemd/user
+cp systemd/user/* ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now wallpaper-rotate.timer wallpaper-watchdog.timer \
+                               we-scene-guard.timer wallpaper-power.service
 ```
 
 装完执行 `niri validate` 检查语法（应输出 `config is valid`），重新登录 niri 生效。
 
 ## 开机自启
 
-`config.kdl` 里通过 `spawn-at-startup` 拉起：
+`config.kdl` 里通过 `spawn-at-startup` 拉起三项。**注意：状态栏、通知、锁屏、剪贴板、polkit 认证代理、OSD 全部由 noctalia 一个进程管**，不再需要单独启动 mako / hyprlock / polkit-gnome：
 
 | 启动项 | 作用 |
 |---|---|
-| `env GDK_BACKEND=wayland waybar` | 状态栏 |
-| `mako` | 通知守护 |
-| `vicinae server` | 启动器后台服务 |
-| `wallpaper-rotate.sh` | 动态壁纸 |
-| `polkit-gnome-authentication-agent-1` | Polkit 认证代理（pkexec 弹密码框必需） |
-| `xhost +si:localuser:root` | 授权 root 访问显示服务器（timeshift / gparted 等 GUI 需要） |
+| `noctalia --daemon` | 桌面外壳：状态栏 / 通知 / 锁屏 / 剪贴板历史 / OSD / polkit |
+| `wallpaper-rotate.sh` | 动态壁纸（之后由 systemd timer 每 30 分钟轮换） |
+| `vicinae server` | 启动器后台服务（Alt+Space 唤起） |
 
 ## 快捷键
 
@@ -103,11 +100,11 @@ chmod +x ~/.local/bin/{niri-power,nirimod,lock-and-off,markshot-translate-region
 | 快捷键 | 功能 |
 |---|---|
 | `Super+Shift+/` | 显示快捷键帮助浮层 |
-| `Super+\`` | 快捷键速查表（niri-cheatsheet） |
 | `Super+T` | 打开终端（kitty） |
-| `Super+E` | 文件管理器 |
+| `Super+E` | 文件管理器（nautilus） |
 | `Super+Delete` | 打开回收站 |
 | `Alt+Space` | Vicinae 启动器 |
+| `Super+P` / `Super+Ctrl+P` / `Super+Alt+P` | 番茄钟 开始暂停 / 面板 / 重置全部 |
 
 ### 窗口管理
 
@@ -119,7 +116,6 @@ chmod +x ~/.local/bin/{niri-power,nirimod,lock-and-off,markshot-translate-region
 | `Super+Ctrl+F` | 扩展列到可用宽度 |
 | `Super+C` / `Super+Ctrl+C` | 居中当前列 / 所有可见列 |
 | `Super+Shift+F` | 切换浮动 / 平铺 |
-| `Super+Shift+T` | 切换列标签页显示 |
 | `Super+BracketLeft` / `Super+BracketRight` | 吸收 / 弹出左侧（右侧）窗口 |
 | `Super+,` / `Super+.` | 吸收到列 / 从列弹出 |
 | `Super+Ctrl+,` / `Super+Ctrl+.` | 与左 / 右窗口交换 |
@@ -144,11 +140,13 @@ chmod +x ~/.local/bin/{niri-power,nirimod,lock-and-off,markshot-translate-region
 | `Super+Ctrl+1` ~ `Super+Ctrl+9` | 把列移到工作区 N |
 | `Super+J` / `Super+K` | 下一个 / 上一个工作区（Vim 风格） |
 | `Super+Page_Down` / `Super+Page_Up` | 同上（别名） |
-| `Super+Ctrl+J/K`、`Super+Ctrl+Page_Down/Up` | 列移到下 / 上个工作区 |
+| `Super+Ctrl+J/K`、`Super+Ctrl+U/I` | 列移到下 / 上个工作区 |
 | `Super+Tab` | 总览（Overview） |
 | `Super+Backspace` / `Super+Ctrl+Backspace` | 回到上个工作区 / 上个窗口 |
 | `Super+Shift+Page_Down` / `Page_Up` | 工作区下移 / 上移 |
 | `Super+滚轮上下` | 切换工作区 |
+| `Super+滚轮左右` | 切换列 |
+| `Super+Ctrl+滚轮上下` | 列移到上 / 下个工作区 |
 | `Super+Ctrl+滚轮左右` | 列左移 / 右移 |
 
 ### 尺寸
@@ -158,18 +156,21 @@ chmod +x ~/.local/bin/{niri-power,nirimod,lock-and-off,markshot-translate-region
 | `Super+R` / `Super+Shift+R` | 正向 / 反向切换列宽 |
 | `Super+Ctrl+E` / `Super+Ctrl+Shift+E` | 正向 / 反向切换窗口高度 |
 | `Super+Ctrl+R` | 重置窗口高度 |
-| `Super+-` / `Super+=` | 列宽 -10% / +10% |
-| `Super+Shift+-` / `Super+Shift+=` | 窗口高度 -10% / +10% |
+| `Super+Minus` / `Super+Equal` | 列宽 -10% / +10% |
+| `Super+Shift+Minus` / `Super+Shift+Equal` | 窗口高度 -10% / +10% |
 
-### 截图与翻译
+### 截图 / 翻译 / 键盘鼠标
 
 | 快捷键 | 功能 |
 |---|---|
 | `Print` | 截图标注（mark-shot，选区后可画箭头/方框/马赛克，`Ctrl+P` 钉图） |
-| `Super+A` | **截图翻译**：框选区域 → OCR → 翻译成中文 → 译文原地盖在原文上 |
+| `Super+D` | 翻译选中文本（`translate.py`，GTK 窗口） |
+| `Super+G` | 键盘点击屏幕元素（wl-kbptr，截屏识别可点区域） |
+| `Super+Shift+G` | 键盘移动鼠标指针（全屏网格 + 二分逼近，只挪不点） |
+| `Super+Alt+G` | 同上识别流程，但改为右键点击 |
 
-> 2026-09-19 起截图收敛为裸 `Print` 一个键；2026-09-24 新增 `Super+A` 截图翻译。
-> `Super+Shift+E`（剪贴板文本翻译）已注释停用。
+> wl-kbptr 用法：分区标签是字母，`Backspace` 退回上一步，`Esc` 取消。`bisect`/`split` 模式下 `g`/`h`/`b` 分别触发左/右/中键，属内置行为。
+> niri 开了 `cursor hide-when-typing`，wl-kbptr 结束后指针可能短暂隐藏，动一下鼠标即恢复。
 
 ### 声音 / 亮度 / 媒体
 
@@ -179,61 +180,81 @@ chmod +x ~/.local/bin/{niri-power,nirimod,lock-and-off,markshot-translate-region
 | `Super+F3` / `Super+F2` | 音量加 / 减（备用，带通知） |
 | `Fn` 亮度键（`XF86MonBrightness*`） | 亮度 ±5%（锁屏时仍可用） |
 | `Super+F6` / `Super+F5` | 亮度加 / 减（备用，带通知） |
-| `XF86AudioPlay/Next/Prev` | 播放暂停 / 下一曲 / 上一曲（键盘媒体键，锁屏时仍可用） |
-| `Super+Z` / `Super+X` | 上一曲 / 下一曲（媒体键的键盘替代，2026-09-25 新增） |
+| `XF86AudioPlay/Next/Prev` | 播放暂停 / 下一曲 / 上一曲（走 noctalia，锁屏时仍可用） |
+| `Super+Z` / `Super+X` | 上一曲 / 下一曲（媒体键的键盘替代） |
 | `Super+Shift+X` | 播放暂停（同上） |
 
-> 为什么要有 `Super+Z/X` 这组：不少外接键盘**没有媒体键**，而笔记本的 `Fn+←/→` 又常被键盘固件直接翻译成**普通方向键**（实测发出 `LEFT`/`RIGHT`，与方向键无法区分）—— 这种情况软件层无解（绑裸方向键会废掉方向键本身）。所以补一组顺手的组合键兜底。媒体控制走 `playerctl`，只对支持 MPRIS 的播放器生效。
+> 为什么要有 `Super+Z/X` 这组：不少外接键盘**没有媒体键**，而笔记本的 `Fn+←/→` 又常被键盘固件直接翻译成**普通方向键**（实测发出 `LEFT`/`RIGHT`，与方向键无法区分）—— 这种情况软件层无解（绑裸方向键会废掉方向键本身）。所以补一组顺手的组合键兜底。媒体控制走 `noctalia msg media`，只对支持 MPRIS 的播放器生效。
 
 ### 壁纸 / 剪贴板 / 电源
 
 | 快捷键 | 功能 |
 |---|---|
 | `Super+F12` / `Super+F11` | 下一张 / 上一张壁纸 |
-| `Super+V` | 剪贴板历史（CopyClip） |
-| `Super+Shift+O` | 立刻熄屏（DPMS off，按键亮回） |
+| `Super+F10` / `Super+Shift+F10` | 壁纸在电池上也显示 / 只充电时显示 |
+| `Super+V` | 剪贴板历史（noctalia 面板） |
+| `Super+Shift+O` | 立刻熄屏（按键亮回） |
 | `Super+Escape` | 暂停 / 恢复所有快捷键（玩游戏、远程桌面） |
-| `Ctrl+Alt+L` | **锁屏并熄屏**（hyprlock + 立即黑屏） |
 | `Ctrl+Alt+Delete` | 退出 niri |
-| `Super+Shift+P` / `Q` / `S` | 关机 / 重启 / 挂起（zenity 确认框防误触） |
+| `Super+Shift+P` / `Q` / `S` | 关机 / 重启 / 挂起（走 noctalia session） |
+
+> `Ctrl+Alt+L`（锁屏并熄屏）当前**注释停用**。noctalia 自带空闲锁屏，如需手动锁屏可取消该行注释，或直接用 `noctalia msg session lock`。
 
 ## 组件说明
 
-### 状态栏（waybar）
+### 桌面外壳（noctalia）
 
-- 左：工作区胶囊 + 当前窗口标题（走 `niri msg -j` IPC，直接查询、无需守护进程）
-- 中：日期时间
-- 右：音量 / 亮度 / 网络 / CPU / **CPU 温度** / 内存 / 电池 / 待机抑制 / 托盘 / 电源按钮
-- 温度模块用 `hwmon-name: "coretemp"` 匹配，**不写死 hwmon 编号**（插拔设备后编号会漂移）
-- ⚠️ Nerd Font 图标是私有区（PUA）字符，用编辑器批量处理时容易被吞掉。本仓库的配置文件图标完整，请勿手工重排。
+一个守护进程顶掉原来的 waybar + mako + hyprlock + 剪贴板管理器 + polkit 代理：
 
-### 锁屏（hyprlock）
+- 状态栏、通知、锁屏、剪贴板历史、OSD、音量/亮度浮层
+- 快捷键全部走 `noctalia msg ...` 子命令转发，niri 侧只负责按键
+- 番茄钟是第三方插件（`thepunkoff/pomodoro`），通过 `noctalia msg plugin` 控制
+- 配置在 `noctalia/config.toml`，改完 `noctalia msg reload` 或重启进程
 
-`Ctrl+Alt+L` 调用 `bin/lock-and-off`：启动 hyprlock → 等 0.8s 确认它接管 session lock → 熄屏。
+### 动态壁纸
 
-- 之所以不用 niri 里直接写两行 action：`spawn` 是异步的，熄屏会抢在锁屏接管之前，**按键唤醒的瞬间可能瞥见未锁的桌面**。
-- ⚠️ 锁屏界面配置为仓库内的 `hypr/hyprlock.conf`（Catppuccin Mocha，含深色遮罩 + 三态输入反馈），装到 `~/.config/hypr/hyprlock.conf`。
-- ⚠️ 该配置里 **`general.immediate_render = true` 不能删**：不开的话 hyprlock 会等背景截图就绪才开始绘制，那段时间屏幕全黑、要按一下键才出现界面。
-- ⚠️ 深色 `shape` 遮罩也不能删：不加时截到浅色窗口 → 背景发白发灰、浅色文字全糊掉。加了遮罩后，`label` / `input-field` 必须显式 `zindex = 2`，否则会被遮住。
-- 解锁卡住时：`pkill -USR1 hyprlock`。**切勿 SIGTERM / SIGKILL**——niri 走 ext-session-lock 协议，强杀会黑屏死锁。
+`bin/wallpaper-rotate.sh` 是唯一入口，按参数分模式：
 
-### 截图翻译（`Super+A`）
+| 调用 | 行为 |
+|---|---|
+| 无参数 | 轮换到下一张（timer 每 30 分钟调一次） |
+| `next` / `prev` | 手动切下 / 上一张 |
+| `ensure` | 检查壁纸进程是否还活着，死了就拉起来（watchdog 用） |
+| `ignore` / `respect` | 电池供电时也显示 / 只在充电时显示 |
 
-`bin/markshot-translate-region`：`slurp` 选区 → `grim` 截图 → `mark-shot --pin-image`，并钉死四个环境变量让贴图窗口自动 OCR + 自动翻译，译文用 OCR 原始 box 原地覆盖原文（不落盘，Esc 关闭）。
+- 电源门控由 `wallpaper-power-daemon.sh` 常驻监听 upower 事件完成，插拔电源自动启停壁纸
+- 壁纸进程用 `setsid` 脱离 unit 的 cgroup，所以所有 service 都必须 `KillMode=process`，否则 oneshot 结束会把壁纸一起杀掉
+- `wallpaper-power.service` 反而是 `KillMode=control-group`：它要连带清掉 `upower --monitor` 和管道里的 while 子 shell，否则 restart 后新旧两份一起监听、动作翻倍（2026-11-05 实测）
 
-mark-shot 本身不给 OCR / 翻译提供快捷键，所以只能挂 niri 侧。译文依赖本地 OpenAI 兼容 shim（把 `/chat/completions` 转到 Google 翻译端点），**该 shim 未包含在本仓库**；缺少时只出 OCR 原文、没有译文。
+### 壁纸渲染层
 
-### 通知（mako）
+`config.kdl` 里用 `layer-rule` 把 `linux-wallpaperengine` 放进 **backdrop 层**：
 
-`default-timeout=5000`（5 秒自动消失）+ 保留历史 200 条 + 按应用名分组 + 最多同时显示 5 条。
+```kdl
+layer-rule {
+    match namespace="^linux-wallpaperengine$"
+    place-within-backdrop true
+}
+```
 
-### 剪贴板
+配套要求：`layout` 里的 `background-color` 必须是 `"transparent"`，否则纯色背景会把壁纸整个盖住。放进 backdrop 层还顺带解决了总览（Overview）里壁纸被复制到每个工作区的问题。
 
-`Super+V` 唤起 CopyClip。X11 侧的剪贴板桥由 niri 托管的 `xwayland-satellite` 提供，无需额外脚本。
+### 截图与翻译
+
+- `Print` → `mark-shot`，窗口规则里设了 `open-floating true`，出来是浮窗而不是塞进列里
+- `Super+D` → `translate.py`，读取主选区文本，弹 GTK 窗口显示译文（同样 `open-floating`，app-id 是 `Translate.py`，大小写敏感）
+
+### 窗口圆角与毛玻璃
+
+- 全局 `geometry-corner-radius 12` + `clip-to-geometry true`
+- VSCode 单独给了半透明 + 背景模糊（`opacity` + `background-effect { blur true }`），**前提是 VSCode 内部背景也设为半透明**，见它的 `workbench.colorCustomizations`
+- app-id 两种写法（`^code$` / `^com\.microsoft\.VSCode$`）必须各建一条规则——同一条规则里的多个 `match` 是「且」关系，并列写永远匹配不上
+- blur 默认走 xray 模式，模糊的是壁纸而不是下层窗口，这是 niri 的优化行为，不是配置错了
 
 ## 说明
 
-- 配置里多处写了 **绝对路径** `/home/sky/...`（kitty、vicinae、各脚本）。换用户请全局替换成自己的家目录。
-- `niri/config.kdl` 末尾的 `output "eDP-1"` 段固定了 1920x1080@144Hz，请按自己的显示器改。
+- 配置里多处写了**绝对路径** `/home/sky/...`（kitty、vicinae、各脚本、systemd unit）。换用户请全局替换成自己的家目录。
+- `niri/config.kdl` 末尾的 `output "eDP-1"` 段固定了 `1920x1080@144.003`。**刷新率必须与 EDID 完全一致**，写 `144` 会回退到 60Hz。
 - 配置保存后 niri 自动热加载；强制重载用 `niri msg action load-config-file`。
-- 备份文件（`*.bak-*`）已在 `.gitignore` 中排除，不会误提交。
+- 备份文件（`config.kdl.bak-*`、`config.toml.bak-*`）已在 `.gitignore` 中排除。
+- 仓库为公开仓库，提交前确认配置里没有密钥/账号信息。

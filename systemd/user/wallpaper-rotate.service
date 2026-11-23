@@ -1,0 +1,11 @@
+[Unit]
+Description=Rotate Wallpaper Engine wallpaper
+
+[Service]
+Type=oneshot
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+ExecStart=/home/sky/.local/bin/wallpaper-rotate.sh
+TimeoutStartSec=30
+# 只终止 ExecStart 的主进程; 脚本用 setsid 拉起并脱离的壁纸进程保留, 否则会在 oneshot 结束时被清掉
+KillMode=process
